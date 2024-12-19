@@ -68,6 +68,9 @@ RUN ipfs init
 # Set up working directory
 WORKDIR /notebooks
 
+# Copy notebooks directly from the build context for railway (?? This isn't needed for codespaces or local builds)
+COPY notebooks/* /notebooks/
+
 # Expose ports for Jupyter and IPFS
 # Jupyter
 EXPOSE 8888 

@@ -17,18 +17,6 @@ echo "=== After Wait ==="
 echo "Notebook Directory Contents:"
 ls -la /notebooks
 
-# Create a test notebook to verify write permissions and visibility
-echo "Creating test notebook..."
-echo '{
- "cells": [],
- "metadata": {},
- "nbformat": 4,
- "nbformat_minor": 4
-}' > /notebooks/test.ipynb
-
-echo "=== After Test Creation ==="
-ls -la /notebooks
-
 # Start IPFS daemon in the background
 ipfs daemon --enable-pubsub-experiment --migrate=true &
 
