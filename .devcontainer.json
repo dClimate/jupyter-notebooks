@@ -1,0 +1,21 @@
+{
+    "name": "Jupyter IPFS Environment",
+    "dockerComposeFile": "docker-compose.yml",
+    "service": "jupyter",
+    "workspaceFolder": "/notebooks",
+    "forwardPorts": [
+        8888, // Jupyter
+        4001, // IPFS swarm
+        8080, // IPFS gateway
+        5001 // IPFS API
+    ],
+    "postCreateCommand": "jupyter lab --generate-config && echo \"c.ServerApp.allow_remote_access = True\" >> ~/.jupyter/jupyter_lab_config.py",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-python.python",
+                "ms-toolsai.jupyter"
+            ]
+        }
+    }
+}
