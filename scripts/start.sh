@@ -11,4 +11,4 @@ ipfs daemon --enable-pubsub-experiment --migrate=true &
 sleep 5
 
 # Start Jupyter
-jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root
+jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.allow_origin='*'
