@@ -18,7 +18,8 @@
     "variables": {
         "JUPYTER_TOKEN": {
             "description": "Token for Jupyter authentication",
-            "required": true
+            "required": true,
+            "sensitive": true
         }
     },
     "environments": {
@@ -26,7 +27,8 @@
             "ports": [
                 {
                     "containerPort": 8888,
-                    "protocol": "tcp"
+                    "protocol": "tcp",
+                    "published": true
                 },
                 {
                     "containerPort": 4001,
