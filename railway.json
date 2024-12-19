@@ -7,7 +7,13 @@
     "deploy": {
         "startCommand": "/scripts/start.sh",
         "restartPolicyType": "ON_FAILURE",
-        "restartPolicyMaxRetries": 10
+        "restartPolicyMaxRetries": 10,
+        "gitSync": {
+            "enable": true,
+            "sourceDir": "notebooks",
+            "targetDir": "/notebooks",
+            "interval": "30s"
+        }
     },
     "variables": {
         "JUPYTER_TOKEN": {
