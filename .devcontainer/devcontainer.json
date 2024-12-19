@@ -1,8 +1,8 @@
 {
     "name": "Jupyter IPFS Environment",
-    "dockerComposeFile": "docker-compose.yml",
+    "dockerComposeFile": "../docker-compose.yml",
     "service": "jupyter",
-    "workspaceFolder": "/notebooks",
+    "workspaceFolder": "../notebooks",
     "forwardPorts": [
         8888, // Jupyter
         4001, // IPFS swarm
