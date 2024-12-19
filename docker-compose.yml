@@ -1,0 +1,23 @@
+version: '3'
+
+services:
+  jupyter:
+    build:
+      context: .
+      dockerfile: Dockerfile.jupyter
+    ports:
+      - "8888:8888"  # Jupyter
+      - "4001:4001"  # IPFS swarm
+      - "5001:5001"  # IPFS API
+      - "8080:8080"  # IPFS Gateway
+    volumes:
+      - ./notebooks:/notebooks
+      - ./requirements:/opt/requirements
+      - ipfs_data:/root/.ipfs
+      - venv_data:/opt/venv
+    environment:
+      - JUPYTER_TOKEN=your_secure_token
+
+volumes:
+  ipfs_data:
+  venv_data:
