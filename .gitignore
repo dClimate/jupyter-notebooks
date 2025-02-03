@@ -1,2 +1,6 @@
 .DS_Store
 .devcontainer/.DS_Store
+
+/notebooks/.ipynb_checkpoints
+/notebooks/.DS_Store
+/notebooks/.Trash-0
