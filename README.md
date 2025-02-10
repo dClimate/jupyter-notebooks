@@ -62,7 +62,7 @@ The `scripts/start.sh` file ensures all necessary IPFS commands are run. This fi
 
 
 ### Upgrading Kubo
-In order to upgrade Kubo which at the time of writing is at v0.33.0 you must modify `KUBO_VERSION` in the Dockerfile.jupyter and run:
+In order to upgrade Kubo which at the time of writing is at v0.33.1 you must modify `KUBO_VERSION` in the Dockerfile.jupyter and run:
 
 1. `docker compose down` if already running
 2. `docker compose build --no-cache`

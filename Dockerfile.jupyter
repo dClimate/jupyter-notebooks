@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install -y \
     libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
-ARG KUBO_VERSION=0.33.0
+ARG KUBO_VERSION=0.33.1
 
 # Install IPFS with architecture detection
 RUN arch=$(uname -m) && \
