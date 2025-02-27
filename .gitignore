@@ -4,3 +4,6 @@
 /notebooks/.ipynb_checkpoints
 /notebooks/.DS_Store
 /notebooks/.Trash-0
+
+/notebooks/downloaded_data
+/notebooks/output_data
