@@ -18,7 +18,9 @@ echo "Notebook Directory Contents:"
 ls -la /notebooks
 
 # Start IPFS daemon in the background
+ipfs config Addresses.Gateway /ip4/0.0.0.0/tcp/8080
 ipfs daemon --enable-pubsub-experiment --migrate=true &
+# ipfs daemon --enable-pubsub-experiment --migrate=true &
 
 # Wait for IPFS to start
 sleep 5

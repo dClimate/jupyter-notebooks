@@ -67,6 +67,10 @@ RUN mkdir -p /opt/requirements
 RUN ipfs init && \
     ipfs config --json AutoTLS '{"Enabled": true, "AutoWSS": true}'
 
+# === Add the deny list here ===
+RUN mkdir -p /root/.ipfs/denylists && \
+    wget -O /root/.ipfs/denylists/badbits.deny https://badbits.dwebops.pub/badbits.deny
+
 # Set up working directory
 WORKDIR /notebooks
 
