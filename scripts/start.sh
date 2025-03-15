@@ -19,13 +19,14 @@ ls -la /notebooks
 
 export GOLOG_LOG_LEVEL="error,autotls=debug"
 
+
 # Detect Railway's TCP Proxy settings
 if [[ -n "$RAILWAY_TCP_PROXY_DOMAIN" && -n "$RAILWAY_TCP_PROXY_PORT" ]]; then
     echo "Setting up IPFS to announce Railway TCP Proxy address..."
-    
-    # Construct the correct multiaddr
-    ANNOUNCE_ADDR="/dns4/$RAILWAY_TCP_PROXY_DOMAIN/tcp/$RAILWAY_TCP_PROXY_PORT/tls/sni/$RAILWAY_TCP_PROXY_DOMAIN/ws"
-    
+
+    # Construct the correct multiaddr without AutoTLS
+    ANNOUNCE_ADDR="/dns4/$RAILWAY_TCP_PROXY_DOMAIN/tcp/$RAILWAY_TCP_PROXY_PORT/ws"
+
     # Apply it to IPFS configuration
     ipfs config --json Addresses.Announce "[\"$ANNOUNCE_ADDR\"]"
 fi
