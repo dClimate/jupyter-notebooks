@@ -63,6 +63,10 @@ RUN uv pip install --no-cache -r requirements.txt
 # Create requirements directory
 RUN mkdir -p /opt/requirements
 
+
+# Initialize IPFS with default settings and enable AutoTLS
+RUN ipfs init
+
 # # Initialize IPFS with default settings and enable AutoTLS
 # RUN ipfs init && \
 #     ipfs config --json AutoTLS '{"Enabled": true, "AutoWSS": true}'
