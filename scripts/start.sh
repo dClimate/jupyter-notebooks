@@ -17,6 +17,8 @@ echo "=== After Wait ==="
 echo "Notebook Directory Contents:"
 ls -la /notebooks
 
+export GOLOG_LOG_LEVEL="error,autotls=debug"
+
 # Detect Railway's TCP Proxy settings
 if [[ -n "$RAILWAY_TCP_PROXY_DOMAIN" && -n "$RAILWAY_TCP_PROXY_PORT" ]]; then
     echo "Setting up IPFS to announce Railway TCP Proxy address..."
