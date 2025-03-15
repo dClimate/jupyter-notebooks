@@ -17,6 +17,17 @@ echo "=== After Wait ==="
 echo "Notebook Directory Contents:"
 ls -la /notebooks
 
+# Detect Railway's TCP Proxy settings
+if [[ -n "$RAILWAY_TCP_PROXY_DOMAIN" && -n "$RAILWAY_TCP_PROXY_PORT" ]]; then
+    echo "Setting up IPFS to announce Railway TCP Proxy address..."
+    
+    # Construct the correct multiaddr
+    ANNOUNCE_ADDR="/dns4/$RAILWAY_TCP_PROXY_DOMAIN/tcp/$RAILWAY_TCP_PROXY_PORT/tls/sni/$RAILWAY_TCP_PROXY_DOMAIN/ws"
+    
+    # Apply it to IPFS configuration
+    ipfs config --json Addresses.Announce "[\"$ANNOUNCE_ADDR\"]"
+fi
+
 # Start IPFS daemon in the background
 ipfs daemon --enable-pubsub-experiment --migrate=true &
 
