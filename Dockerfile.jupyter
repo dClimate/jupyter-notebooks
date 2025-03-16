@@ -92,4 +92,17 @@ COPY scripts/start.sh /scripts/start.sh
 COPY scripts/install_packages.sh /scripts/install_packages.sh
 RUN chmod +x /scripts/start.sh /scripts/install_packages.sh
 
+
+# Install Node.js and npm (using Debian packages available in slim images)
+RUN apt-get update && apt-get install -y nodejs npm
+
+# Create a directory for our Node.js echo server
+WORKDIR /echo-server
+
+# Copy the echo server file into the container
+COPY echo-server.js .
+
+# Initialize a package.json and install the ws package
+RUN npm init -y && npm install ws
+
 CMD ["/scripts/start.sh"]
