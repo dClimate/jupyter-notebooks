@@ -1,0 +1,82 @@
+# Dockerfile.fly (based on Dockerfile.jupyter)
+FROM --platform=linux/amd64 python:3.12.7-slim
+
+# Install system dependencies, IPFS, and build tools
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    wget \
+    build-essential \
+    python3-dev \
+    python3-venv \
+    libffi-dev \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+ARG KUBO_VERSION=0.33.2
+
+# Install IPFS with architecture detection
+RUN arch=$(uname -m) && \
+    if [ "$arch" = "aarch64" ]; then \
+    IPFS_ARCH="arm64"; \
+    else \
+    IPFS_ARCH="amd64"; \
+    fi && \
+    wget "https://dist.ipfs.tech/kubo/v${KUBO_VERSION}/kubo_v${KUBO_VERSION}_linux-${IPFS_ARCH}.tar.gz" && \
+    tar -xvzf "kubo_v${KUBO_VERSION}_linux-${IPFS_ARCH}.tar.gz" && \
+    cd kubo && \
+    bash install.sh && \
+    cd .. && \
+    rm -rf "kubo_v${KUBO_VERSION}_linux-${IPFS_ARCH}.tar.gz"
+
+# UV installation
+RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates
+ADD https://astral.sh/uv/install.sh /uv-installer.sh
+RUN sh /uv-installer.sh && rm /uv-installer.sh
+ENV PATH="/root/.local/bin/:$PATH"
+
+# Create data directory structure for our single volume
+RUN mkdir -p /data/ipfs /data/venv /data/notebooks /opt/requirements
+
+# Create symbolic links to the expected paths
+RUN ln -s /data/ipfs /root/.ipfs && \
+    ln -s /data/venv /opt/venv && \
+    ln -s /data/notebooks /notebooks
+
+# Create a directory for UV virtual environment
+ENV VIRTUAL_ENV=/opt/venv
+RUN uv venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
+# Install base packages using UV
+COPY requirements.txt .
+RUN uv pip install --no-cache -r requirements.txt
+
+# Expose ports for Jupyter and IPFS
+EXPOSE 8888
+EXPOSE 4001
+EXPOSE 5001
+EXPOSE 8080
+
+# Copy and set up scripts
+COPY scripts/start-fly.sh /scripts/start-fly.sh
+COPY scripts/install_packages.sh /scripts/install_packages.sh
+RUN chmod +x /scripts/start-fly.sh /scripts/install_packages.sh
+
+# Install Node.js and npm
+RUN apt-get update && apt-get install -y nodejs npm
+
+# Create a directory for our Node.js echo server
+WORKDIR /echo-server
+
+# Copy the echo server file into the container
+COPY echo-server.js .
+
+# Initialize a package.json and install the ws package
+RUN npm init -y && npm install ws
+
+# Set the working directory back to /notebooks
+WORKDIR /notebooks
+
+# Use the fly-specific start script
+CMD ["/scripts/start-fly.sh"] 
