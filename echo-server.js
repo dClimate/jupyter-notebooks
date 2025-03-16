@@ -1,25 +1,22 @@
 // echo-server.js
-const https = require("https");
-const fs = require("fs");
+const http = require("http");
 const WebSocket = require("ws");
 
-const port = 4001;
+// Use Railway’s assigned port or default to 80.
+const port = process.env.PORT || 80;
 
-// Read your TLS certificate and key
-const serverOptions = {
-	key: fs.readFileSync("key.pem"),
-	cert: fs.readFileSync("cert.pem"),
-};
-
-// Create an HTTPS server using the certificate and key
-const httpsServer = https.createServer(serverOptions);
-
-// Create the WebSocket server, binding it to the HTTPS server
-const wss = new WebSocket.Server({ server: httpsServer });
-
-httpsServer.listen(port, "0.0.0.0", () => {
-	console.log(`TLS Echo server listening on port ${port}`);
+// Create an HTTP server that can also handle upgrade requests.
+const server = http.createServer((req, res) => {
+	res.writeHead(200, { "Content-Type": "text/plain" });
+	res.end("Hello, this is an HTTP server that supports WebSocket upgrades.");
 });
+
+server.listen(port, "0.0.0.0", () => {
+	console.log(`HTTP/WebSocket server listening on port ${port}`);
+});
+
+// Bind the WebSocket server to the same HTTP server.
+const wss = new WebSocket.Server({ server });
 
 wss.on("connection", (ws) => {
 	console.log("Client connected");
