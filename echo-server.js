@@ -2,7 +2,8 @@
 const WebSocket = require("ws");
 
 const port = 4001;
-const server = new WebSocket.Server({ port }, () => {
+
+const server = new WebSocket.Server({ host: "0.0.0.0", port }, () => {
 	console.log(`Echo server listening on port ${port}`);
 });
 
