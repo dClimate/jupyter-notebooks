@@ -1,0 +1,29 @@
+# fly.toml app configuration file generated for muddy-river-1862 on 2025-03-16T02:26:49-04:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = "muddy-river-1862"
+primary_region = "iad"
+
+[build]
+  dockerfile = "Dockerfile.fly"
+
+[http_service]
+  internal_port = 8888
+  force_https = true
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ["app"]
+
+# Machine resources - increased memory to prevent OOM errors
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 4096
+
+# Volume mounts - using a single volume for all data
+[[mounts]]
+  source = "zarr_data"
+  destination = "/data"
