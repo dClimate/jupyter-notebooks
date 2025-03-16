@@ -18,27 +18,26 @@ ls -la /notebooks
 ANNOUNCE_ADDRS=()
 
 if [[ -n "$RAILWAY_TCP_PROXY_DOMAIN" && -n "$RAILWAY_TCP_PROXY_PORT" ]]; then
-    echo "Adding TCP proxy address for IPFS..."
-    # This address is for TCP-based connections (Kubo nodes)
-    TCP_ADDR="/dns4/$RAILWAY_TCP_PROXY_DOMAIN/tcp/$RAILWAY_TCP_PROXY_PORT/tls/sni/$RAILWAY_TCP_PROXY_DOMAIN/ws"
+    echo "Adding TCP proxy address for IPFS (plain TCP)..."
+    # Announce for TCP connections (for Kubo nodes)
+    TCP_ADDR="/dns4/$RAILWAY_TCP_PROXY_DOMAIN/tcp/$RAILWAY_TCP_PROXY_PORT/tls/sni/$RAILWAY_TCP_PROXY_DOMAIN"
     ANNOUNCE_ADDRS+=("$TCP_ADDR")
 fi
 
 if [[ -n "$RAILWAY_PUBLIC_DOMAIN" ]]; then
     echo "Adding public domain address for WebSocket connections..."
-    # This address is for WebSocket connections (for Helia/browser clients)
+    # Announce for WebSocket connections (for Helia/browser clients)
     WS_ADDR="/dns4/$RAILWAY_PUBLIC_DOMAIN/tcp/443/tls/sni/$RAILWAY_PUBLIC_DOMAIN/ws"
     ANNOUNCE_ADDRS+=("$WS_ADDR")
 fi
 
 if [ ${#ANNOUNCE_ADDRS[@]} -gt 0 ]; then
-    # Build a JSON array manually in Bash
+    # Manually build a JSON array without jq
     JSON_ADDRS="["
     for addr in "${ANNOUNCE_ADDRS[@]}"; do
         JSON_ADDRS+="\"$addr\","
     done
-    # Remove trailing comma and close the JSON array
-    JSON_ADDRS="${JSON_ADDRS%,}"
+    JSON_ADDRS="${JSON_ADDRS%,}"  # remove trailing comma
     JSON_ADDRS+="]"
     
     echo "Announcing addresses: $JSON_ADDRS"
