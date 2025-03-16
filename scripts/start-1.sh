@@ -30,6 +30,7 @@ if [[ -n "$RAILWAY_TCP_PROXY_DOMAIN" && -n "$RAILWAY_TCP_PROXY_PORT" ]]; then
     ipfs config --json Addresses.Announce "[\"$ANNOUNCE_ADDR\"]"
 fi
 
+
 # Get current Addresses.Swarm and remove last bracket (to append entries)
 EXISTING_SWARM=$(ipfs config Addresses.Swarm | tr -d '[]' | tr -d '\n')
 
