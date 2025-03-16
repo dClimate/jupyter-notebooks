@@ -102,6 +102,8 @@ WORKDIR /echo-server
 # Copy the echo server file into the container
 COPY echo-server.js .
 
+COPY cert.pem key.pem /echo-server/
+
 # Initialize a package.json and install the ws package
 RUN npm init -y && npm install ws
 
