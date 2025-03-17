@@ -13,10 +13,6 @@ export GOLOG_LOG_LEVEL="error,autotls=debug"
 # Wait a bit for gitSync (if it's running)
 sleep 10
 
-echo "=== After Wait ==="
-echo "Notebook Directory Contents:"
-ls -la /notebooks
-
 # Retrieve the peer ID from IPFS config (ensure your node is initialized)
 PEER_ID=$(ipfs config Identity.PeerID)
 if [ -z "$PEER_ID" ]; then
