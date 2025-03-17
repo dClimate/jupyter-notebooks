@@ -81,7 +81,7 @@ if [[ -n "$RAILWAY_TCP_PROXY_DOMAIN" && -n "$RAILWAY_TCP_PROXY_PORT" ]]; then
     echo "Adding public domain address for WebSocket connections..."
     # Announce for WebSocket connections using the same external mapping,
     # with '/ws' appended.
-    WS_ADDR="/dns4/$RAILWAY_TCP_PROXY_DOMAIN/tcp/$RAILWAY_TCP_PROXY_PORT/tls/sni/$RAILWAY_TCP_PROXY_DOMAIN/ws/ipfs/$PEER_ID"
+    WS_ADDR="/dns4/$RAILWAY_TCP_PROXY_DOMAIN/tcp/$RAILWAY_TCP_PROXY_PORT/tls/sni/$RAILWAY_TCP_PROXY_DOMAIN/ws/p2p/$PEER_ID"
     ANNOUNCE_ADDRS+=("$WS_ADDR")
 fi
 
