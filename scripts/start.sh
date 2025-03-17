@@ -7,6 +7,9 @@ echo "Working Directory: $(pwd)"
 echo "Notebook Directory Contents:"
 ls -la /notebooks
 
+# Enable AutoTLS debug logging
+export GOLOG_LOG_LEVEL="error,autotls=debug"
+
 # Wait a bit for gitSync (if it's running)
 sleep 10
 
@@ -97,6 +100,16 @@ if [ ${#ANNOUNCE_ADDRS[@]} -gt 0 ]; then
     echo "Announcing addresses: $JSON_ADDRS"
     ipfs config --json Addresses.Announce "$JSON_ADDRS"
 fi
+
+# Enable AutoTLS settings.
+# AutoTLS.AutoWSS=true tells Kubo to add a secure WebSocket listener on the /tcp port.
+ipfs config --json AutoTLS.Enabled true
+ipfs config --json AutoTLS.AutoWSS true
+# Optionally, you can set the domain suffix if needed:
+# ipfs config --json AutoTLS.DomainSuffix "libp2p.direct"
+
+echo "Current AutoTLS configuration:"
+ipfs config AutoTLS
 
 # Start IPFS daemon in the background
 ipfs daemon --enable-pubsub-experiment --migrate=true &
