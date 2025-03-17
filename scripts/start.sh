@@ -73,11 +73,17 @@ echo "Using peer ID: $PEER_ID"
 # Build the list of announce addresses for IPFS
 ANNOUNCE_ADDRS=()
 
+# Build the list of append announce addresses for IPFS (for manual port forwarding)
+APPEND_ANNOUNCE_ADDRS=()
+
 if [[ -n "$RAILWAY_TCP_PROXY_DOMAIN" && -n "$RAILWAY_TCP_PROXY_PORT" ]]; then
     echo "Adding TCP proxy address for IPFS (plain TCP)..."
     # Announce for TCP connections with peer ID appended
     TCP_ADDR="/dns4/$RAILWAY_TCP_PROXY_DOMAIN/tcp/$RAILWAY_TCP_PROXY_PORT/tls/sni/$RAILWAY_TCP_PROXY_DOMAIN/ipfs/$PEER_ID"
     ANNOUNCE_ADDRS+=("$TCP_ADDR")
+
+    BASIC_ADDR="/ip4/$RAILWAY_TCP_PROXY_DOMAIN/tcp/$RAILWAY_TCP_PROXY_PORT"
+    APPEND_ANNOUNCE_ADDRS+=("$BASIC_ADDR")
 
     # echo "Adding public domain address for WebSocket connections..."
     # Announce for WebSocket connections using the same external mapping,
@@ -97,6 +103,18 @@ if [ ${#ANNOUNCE_ADDRS[@]} -gt 0 ]; then
     
     echo "Announcing addresses: $JSON_ADDRS"
     ipfs config --json Addresses.Announce "$JSON_ADDRS"
+fi
+
+if [ ${#APPEND_ANNOUNCE_ADDRS[@]} -gt 0 ]; then
+    # Manually build a JSON array without jq
+    JSON_ADDRS="["
+    for addr in "${APPEND_ANNOUNCE_ADDRS[@]}"; do
+        JSON_ADDRS+="\"$addr\","
+    done
+    JSON_ADDRS="${JSON_ADDRS%,}"  # remove trailing comma
+    JSON_ADDRS+="]"
+
+    echo "Announcing append addresses: $JSON_ADDRS"
     ipfs config --json Addresses.AppendAnnounce "$JSON_ADDRS"
 fi
 
