@@ -26,28 +26,28 @@ fi
 echo "Using peer ID: $PEER_ID"
 
 # Define the WS address you want to add
-WS_ADDR="/ip4/0.0.0.0/tcp/4001/ws"
+# WS_ADDR="/ip4/0.0.0.0/tcp/4001/ws"
 
-# Get current swarm addresses as a JSON string
-CURRENT_SWARM=$(ipfs config Addresses.Swarm)
-echo "Current Swarm addresses: $CURRENT_SWARM"
+# # Get current swarm addresses as a JSON string
+# CURRENT_SWARM=$(ipfs config Addresses.Swarm)
+# echo "Current Swarm addresses: $CURRENT_SWARM"
 
-# Check if the WS address is already in the array
-if [[ "$CURRENT_SWARM" == *"$WS_ADDR"* ]]; then
-  echo "WebSocket address already exists in swarm configuration."
-  UPDATED_SWARM="$CURRENT_SWARM"
-else
-  # If the current array is empty "[]", then build a new array with WS_ADDR
-  if [ "$CURRENT_SWARM" == "[]" ]; then
-    UPDATED_SWARM='["'"$WS_ADDR"'"]'
-  else
-    # Remove the trailing ']' from CURRENT_SWARM and append the new address.
-    UPDATED_SWARM="${CURRENT_SWARM%?},\"$WS_ADDR\"]"
-  fi
-  echo "Updated Swarm addresses: $UPDATED_SWARM"
-  # Update the configuration
-  ipfs config --json Addresses.Swarm "$UPDATED_SWARM"
-fi
+# # Check if the WS address is already in the array
+# if [[ "$CURRENT_SWARM" == *"$WS_ADDR"* ]]; then
+#   echo "WebSocket address already exists in swarm configuration."
+#   UPDATED_SWARM="$CURRENT_SWARM"
+# else
+#   # If the current array is empty "[]", then build a new array with WS_ADDR
+#   if [ "$CURRENT_SWARM" == "[]" ]; then
+#     UPDATED_SWARM='["'"$WS_ADDR"'"]'
+#   else
+#     # Remove the trailing ']' from CURRENT_SWARM and append the new address.
+#     UPDATED_SWARM="${CURRENT_SWARM%?},\"$WS_ADDR\"]"
+#   fi
+#   echo "Updated Swarm addresses: $UPDATED_SWARM"
+#   # Update the configuration
+#   ipfs config --json Addresses.Swarm "$UPDATED_SWARM"
+# fi
 
 # Define the WS address you want to add
 # WS_ADDR="/ip4/0.0.0.0/tcp/4001/ws"
@@ -105,8 +105,7 @@ if [ ${#ANNOUNCE_ADDRS[@]} -gt 0 ]; then
 fi
 
 # This tells your node not to disable NAT port mapping—so if you're doing manual port forwarding, Kubo will try to use that public mapping to determine reachability.
-ipfs config Swarm.DisableNatPortMap false
-
+ipfs config --json Swarm.DisableNatPortMap false
 
 # Enable AutoTLS settings.
 # AutoTLS.AutoWSS=true tells Kubo to add a secure WebSocket listener on the /tcp port.
