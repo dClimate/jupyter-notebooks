@@ -50,28 +50,30 @@ else
 fi
 
 # Define the WS address you want to add
-WS_ADDR="/ip4/0.0.0.0/tcp/4001/ws"
+# WS_ADDR="/ip4/0.0.0.0/tcp/4001/ws"
 
-# Get current swarm addresses as a JSON string
-CURRENT_SWARM=$(ipfs config Addresses.Swarm)
-echo "Current Swarm addresses: $CURRENT_SWARM"
+# # Get current swarm addresses as a JSON string
+# CURRENT_SWARM=$(ipfs config Addresses.Swarm)
+# echo "Current Swarm addresses: $CURRENT_SWARM"
 
-# Check if the WS address is already in the array
-if [[ "$CURRENT_SWARM" == *"$WS_ADDR"* ]]; then
-  echo "WebSocket address already exists in swarm configuration."
-  UPDATED_SWARM="$CURRENT_SWARM"
-else
-  # If the current array is empty "[]", then build a new array with WS_ADDR
-  if [ "$CURRENT_SWARM" == "[]" ]; then
-    UPDATED_SWARM='["'"$WS_ADDR"'"]'
-  else
-    # Remove the trailing ']' from CURRENT_SWARM and append the new address.
-    UPDATED_SWARM="${CURRENT_SWARM%?},\"$WS_ADDR\"]"
-  fi
-  echo "Updated Swarm addresses: $UPDATED_SWARM"
-  # Update the configuration
-  ipfs config --json Addresses.Swarm "$UPDATED_SWARM"
-fi
+# # Check if the WS address is already in the array
+# if [[ "$CURRENT_SWARM" == *"$WS_ADDR"* ]]; then
+#   echo "WebSocket address already exists in swarm configuration."
+#   UPDATED_SWARM="$CURRENT_SWARM"
+# else
+#   # If the current array is empty "[]", then build a new array with WS_ADDR
+#   if [ "$CURRENT_SWARM" == "[]" ]; then
+#     UPDATED_SWARM='["'"$WS_ADDR"'"]'
+#   else
+#     # Remove the trailing ']' from CURRENT_SWARM and append the new address.
+#     UPDATED_SWARM="${CURRENT_SWARM%?},\"$WS_ADDR\"]"
+#   fi
+#   echo "Updated Swarm addresses: $UPDATED_SWARM"
+#   # Update the configuration
+#   ipfs config --json Addresses.Swarm "$UPDATED_SWARM"
+# fi
+
+
 # Build the list of announce addresses for IPFS
 ANNOUNCE_ADDRS=()
 
@@ -81,11 +83,11 @@ if [[ -n "$RAILWAY_TCP_PROXY_DOMAIN" && -n "$RAILWAY_TCP_PROXY_PORT" ]]; then
     TCP_ADDR="/dns4/$RAILWAY_TCP_PROXY_DOMAIN/tcp/$RAILWAY_TCP_PROXY_PORT/tls/sni/$RAILWAY_TCP_PROXY_DOMAIN/ipfs/$PEER_ID"
     ANNOUNCE_ADDRS+=("$TCP_ADDR")
 
-    echo "Adding public domain address for WebSocket connections..."
+    # echo "Adding public domain address for WebSocket connections..."
     # Announce for WebSocket connections using the same external mapping,
     # with '/ws' appended.
-    WS_ADDR="/dns4/$RAILWAY_TCP_PROXY_DOMAIN/tcp/$RAILWAY_TCP_PROXY_PORT/tls/sni/$RAILWAY_TCP_PROXY_DOMAIN/ws/p2p/$PEER_ID"
-    ANNOUNCE_ADDRS+=("$WS_ADDR")
+    # WS_ADDR="/dns4/$RAILWAY_TCP_PROXY_DOMAIN/tcp/$RAILWAY_TCP_PROXY_PORT/tls/sni/$RAILWAY_TCP_PROXY_DOMAIN/ws/p2p/$PEER_ID"
+    # ANNOUNCE_ADDRS+=("$WS_ADDR")
 fi
 
 if [ ${#ANNOUNCE_ADDRS[@]} -gt 0 ]; then
@@ -99,7 +101,12 @@ if [ ${#ANNOUNCE_ADDRS[@]} -gt 0 ]; then
     
     echo "Announcing addresses: $JSON_ADDRS"
     ipfs config --json Addresses.Announce "$JSON_ADDRS"
+    ipfs config --json Addresses.AppendAnnounce "$JSON_ADDRS"
 fi
+
+# This tells your node not to disable NAT port mapping—so if you're doing manual port forwarding, Kubo will try to use that public mapping to determine reachability.
+ipfs config Swarm.DisableNatPortMap false
+
 
 # Enable AutoTLS settings.
 # AutoTLS.AutoWSS=true tells Kubo to add a secure WebSocket listener on the /tcp port.
