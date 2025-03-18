@@ -84,12 +84,12 @@ EXPOSE 5001
 EXPOSE 8080 
 
 # Copy and set up scripts
-COPY scripts/start.sh /scripts/start.sh
+COPY scripts/digitalocean_start.sh /scripts/digitalocean_start.sh
 COPY scripts/install_packages.sh /scripts/install_packages.sh
-RUN chmod +x /scripts/start.sh /scripts/install_packages.sh
+RUN chmod +x /scripts/digitalocean_start.sh /scripts/install_packages.sh
 
 # Set Digital Ocean specific environment variables
 ENV DO_APP_PLATFORM=true
 
-# Use ENTRYPOINT for more robust container startup
-ENTRYPOINT ["/bin/bash", "/scripts/start.sh"]
+# Use CMD instead of ENTRYPOINT for Digital Ocean App Platform compatibility
+CMD ["/bin/bash", "/scripts/digitalocean_start.sh"]

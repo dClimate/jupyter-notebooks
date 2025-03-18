@@ -14,7 +14,7 @@ This project includes dedicated files for Digital Ocean App Platform deployment:
 
 - `Dockerfile.digitalocean`: A Docker configuration specifically optimized for Digital Ocean
 - `app.yaml`: The Digital Ocean App Platform specification file
-- Updated `start.sh` script with Digital Ocean environment awareness
+- `scripts/digitalocean_start.sh`: A dedicated startup script for Digital Ocean App Platform
 
 These files are maintained separately from the local development configuration to keep both environments working correctly.
 
@@ -25,7 +25,7 @@ These files are maintained separately from the local development configuration t
 Make sure your code is in a GitHub repository, including all the files modified for Digital Ocean App Platform:
 - `app.yaml`
 - `Dockerfile.digitalocean`
-- Updated scripts
+- `scripts/digitalocean_start.sh`
 
 ### 2. Deploy with the Digital Ocean Web Interface
 
@@ -38,6 +38,7 @@ Make sure your code is in a GitHub repository, including all the files modified 
    - Choose "Dockerfile" as your build method
    - Specify `Dockerfile.digitalocean` as your Dockerfile path
    - Set HTTP port to 8888
+   - Set run command to `/bin/bash /scripts/digitalocean_start.sh`
 7. Configure environment variables:
    - Add `JUPYTER_TOKEN` as a secret (use a secure token)
    - Add `DO_APP_PLATFORM=true`
@@ -88,6 +89,26 @@ Once deployed, you can access your Jupyter notebook at:
 - You'll need to use the `JUPYTER_TOKEN` you set during configuration to log in
 
 ## Troubleshooting
+
+### "Unable to detect a run command" Error
+
+If you encounter the error "Unable to detect a run command", there are two ways to fix it:
+
+1. Make sure your `app.yaml` file includes the `run_command` parameter:
+   ```yaml
+   services:
+     - name: jupyter
+       # other configurations...
+       run_command: /bin/bash /scripts/digitalocean_start.sh
+   ```
+
+2. Ensure your Dockerfile uses CMD instead of ENTRYPOINT:
+   ```dockerfile
+   # Use CMD instead of ENTRYPOINT for Digital Ocean App Platform compatibility
+   CMD ["/bin/bash", "/scripts/digitalocean_start.sh"]
+   ```
+
+The current setup includes both solutions for maximum compatibility.
 
 ### Check Logs
 

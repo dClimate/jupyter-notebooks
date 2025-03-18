@@ -7,6 +7,7 @@ services:
       repo: https://github.com/dClimate/jupyter-notebooks
     dockerfile_path: Dockerfile.digitalocean
     http_port: 8888
+    run_command: /bin/bash /scripts/digitalocean_start.sh
     routes:
       - path: /
     envs:
