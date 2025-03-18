@@ -1,0 +1,623 @@
+This file is a merged representation of a subset of the codebase, containing specifically included files, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Only files matching these patterns are included: scripts/, app.yaml, docker-compose.yml, Dockerfile.digitalocean, Dockerfile.jupyter, Procfile, railway.json, REDME.md, requirements.txt
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+<additional_info>
+
+</additional_info>
+
+</file_summary>
+
+<directory_structure>
+scripts/
+  digitalocean_start.sh
+  install_packages.sh
+  start.sh
+app.yaml
+docker-compose.yml
+Dockerfile.digitalocean
+Dockerfile.jupyter
+Procfile
+railway.json
+requirements.txt
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="scripts/digitalocean_start.sh">
+#!/bin/bash
+# /scripts/digitalocean_start.sh
+# Dedicated startup script for Digital Ocean App Platform
+
+# Debug deployment info
+echo "=== Digital Ocean App Platform Deployment ==="
+echo "Working Directory: $(pwd)"
+echo "Notebook Directory Contents:"
+ls -la /notebooks
+
+# Enable AutoTLS debug logging
+export GOLOG_LOG_LEVEL="error,autotls=debug"
+
+# Retrieve the peer ID from IPFS config (ensure your node is initialized)
+PEER_ID=$(ipfs config Identity.PeerID)
+if [ -z "$PEER_ID" ]; then
+    echo "Error: Unable to retrieve peer ID. Make sure your IPFS node is initialized."
+    exit 1
+fi
+echo "Using peer ID: $PEER_ID"
+
+# Digital Ocean App Platform specific configuration
+echo "Configuring IPFS for Digital Ocean App Platform..."
+
+# Get the public-facing URL assigned by Digital Ocean
+if [ -n "$APP_URL" ]; then
+    APP_DOMAIN=$(echo "$APP_URL" | sed 's|^https?://||' | sed 's|/.*$||')
+    
+    echo "App domain: $APP_DOMAIN"
+    
+    # Configure announce addresses
+    DO_ANNOUNCE_ADDRS="[\"/dns4/$APP_DOMAIN/tcp/443/https\"]"
+    echo "Setting announce addresses: $DO_ANNOUNCE_ADDRS"
+    ipfs config --json Addresses.Announce "$DO_ANNOUNCE_ADDRS"
+else
+    echo "No APP_URL environment variable found"
+fi
+
+# Disable NAT port mapping in cloud environment
+ipfs config --json Swarm.DisableNatPortMap true
+
+# Enable AutoTLS settings.
+ipfs config --json AutoTLS.Enabled true
+ipfs config --json AutoTLS.AutoWSS true
+
+echo "Current AutoTLS configuration:"
+ipfs config AutoTLS
+
+# Install any additional packages from requirements files
+if [ -f "/scripts/install_packages.sh" ]; then
+    echo "Running install_packages.sh..."
+    /scripts/install_packages.sh
+fi
+
+# Start IPFS daemon in the background
+echo "Starting IPFS daemon..."
+ipfs daemon --enable-pubsub-experiment --migrate=true &
+
+# Wait for IPFS to start
+sleep 5
+
+# Determine Jupyter token
+JUPYTER_TOKEN_VALUE=${JUPYTER_TOKEN:-"default_token"}
+echo "Using Jupyter token: $JUPYTER_TOKEN_VALUE"
+
+# Start Jupyter Lab
+echo "Starting Jupyter Lab..."
+jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token="$JUPYTER_TOKEN_VALUE" --NotebookApp.allow_origin='*'
+</file>
+
+<file path="scripts/install_packages.sh">
+#!/bin/bash
+# /scripts/install_packages.sh
+
+# Function to install packages using UV
+# install_packages() {
+#     local req_file=$1
+#     if [ -f "$req_file" ]; then
+#         echo "Installing packages from $req_file..."
+#         /root/.cargo/bin/uv pip install -r "$req_file"
+#     fi
+# }
+
+# # Install from user's requirements file if it exists
+# install_packages "/notebooks/requirements.txt"
+
+# # Install from any additional requirements files in the requirements directory
+# for req_file in /opt/requirements/*.txt; do
+#     if [ -f "$req_file" ]; then
+#         install_packages "$req_file"
+#     fi
+# done
+
+
+#!/bin/bash
+
+# Check if there are any additional requirement files
+if [ -d "/opt/requirements" ]; then
+    for req in /opt/requirements/*.txt; do
+        if [ -f "$req" ]; then
+            echo "Installing packages from $req"
+            uv pip install --no-cache -r "$req"
+        fi
+    done
+fi
+</file>
+
+<file path="Procfile">
+web: /bin/bash /scripts/digitalocean_start.sh
+</file>
+
+<file path="docker-compose.yml">
+services:
+  jupyter:
+    build:
+      context: .
+      dockerfile: Dockerfile.jupyter
+    ports:
+      - "8888:8888"  # Jupyter
+      - "4001:4001"  # IPFS swarm
+      - "5001:5001"  # IPFS API
+      - "8080:8080"  # IPFS Gateway
+    volumes:
+      - ./notebooks:/notebooks
+      - ./requirements:/opt/requirements
+      - ipfs_data:/root/.ipfs
+      - venv_data:/opt/venv
+    environment:
+      - JUPYTER_TOKEN=your_secure_token
+
+volumes:
+  ipfs_data:
+  venv_data:
+</file>
+
+<file path="requirements.txt">
+jupyter
+jupyterlab
+jupyter-ai[all]
+</file>
+
+<file path="app.yaml">
+name: zarr-getting-started
+services:
+  - name: jupyter
+    type: web
+    github:
+      branch: main
+      deploy_on_push: true
+      repo: https://github.com/dClimate/jupyter-notebooks
+    dockerfile_path: Dockerfile.digitalocean
+    http_port: 8888
+    run_command: /bin/bash /scripts/digitalocean_start.sh
+    routes:
+      - path: /
+    envs:
+      - key: JUPYTER_TOKEN
+        value: your_secure_token
+        type: SECRET
+    internal_ports:
+      - port: 4001
+        protocol: tcp 
+      - port: 5001
+        protocol: tcp
+      - port: 8080
+        protocol: tcp
+</file>
+
+<file path="railway.json">
+{
+    "$schema": "https://railway.app/railway.schema.json",
+    "build": {
+        "builder": "DOCKERFILE",
+        "dockerfilePath": "Dockerfile.jupyter"
+    },
+    "deploy": {
+        "startCommand": "/scripts/start.sh",
+        "restartPolicyType": "ON_FAILURE",
+        "restartPolicyMaxRetries": 10,
+        "gitSync": {
+            "enable": true,
+            "sourceDir": "notebooks",
+            "targetDir": "/notebooks",
+            "interval": "30s"
+        }
+    },
+    "variables": {
+        "JUPYTER_TOKEN": {
+            "description": "Token for Jupyter authentication",
+            "required": true,
+            "sensitive": true
+        }
+    },
+    "environments": {
+        "production": {
+            "ports": [
+                {
+                    "containerPort": 8888,
+                    "protocol": "tcp",
+                    "published": true
+                },
+                {
+                    "containerPort": 4001,
+                    "protocol": "tcp"
+                },
+                {
+                    "containerPort": 8080,
+                    "protocol": "tcp"
+                },
+                {
+                    "containerPort": 5001,
+                    "protocol": "tcp"
+                }
+            ]
+        }
+    }
+}
+</file>
+
+<file path="Dockerfile.digitalocean">
+# Dockerfile.jupyter
+FROM --platform=linux/amd64 python:3.12.7-slim
+
+# Install system dependencies, IPFS, and build tools
+# build-essential: Provides GCC compiler and build tools for C extensions
+# python3-dev: Includes Python headers needed for building C extensions
+# libffi-dev: Required for Foreign Function Interface
+# libssl-dev: Needed for cryptographic operations
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    wget \
+    build-essential \
+    python3-dev \
+    python3-venv \
+    libffi-dev \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+ARG KUBO_VERSION=0.33.2
+
+# Install IPFS with architecture detection
+RUN arch=$(uname -m) && \
+    if [ "$arch" = "aarch64" ]; then \
+    IPFS_ARCH="arm64"; \
+    else \
+    IPFS_ARCH="amd64"; \
+    fi && \
+    wget "https://dist.ipfs.tech/kubo/v${KUBO_VERSION}/kubo_v${KUBO_VERSION}_linux-${IPFS_ARCH}.tar.gz" && \
+    tar -xvzf "kubo_v${KUBO_VERSION}_linux-${IPFS_ARCH}.tar.gz" && \
+    cd kubo && \
+    bash install.sh && \
+    cd .. && \
+    rm -rf "kubo_v${KUBO_VERSION}_linux-${IPFS_ARCH}.tar.gz"
+
+# <----------------- UV installation ----------------->
+# The installer requires curl (and certificates) to download the release archive
+RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates
+
+# Download the latest installer
+ADD https://astral.sh/uv/install.sh /uv-installer.sh
+
+# Run the installer then remove it
+RUN sh /uv-installer.sh && rm /uv-installer.sh
+
+# Ensure the installed binary is on the `PATH`
+ENV PATH="/root/.local/bin/:$PATH"
+
+# <----------------- End of UV installation ----------------->
+
+# Create a directory for UV virtual environment
+# We use UV's native virtual environment instead of venv
+ENV VIRTUAL_ENV=/opt/venv
+RUN uv venv $VIRTUAL_ENV
+
+# Add virtual environment to PATH
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
+# Install base packages using UV
+COPY requirements.txt .
+RUN uv pip install --no-cache -r requirements.txt
+
+# Create requirements directory
+RUN mkdir -p /opt/requirements
+
+# Initialize IPFS with default settings and enable AutoTLS
+RUN ipfs init && \
+    ipfs config --json AutoTLS '{"Enabled": true, "AutoWSS": true}'
+
+# Set up working directory
+WORKDIR /notebooks
+
+# Create notebooks directory if it doesn't exist
+RUN mkdir -p /notebooks
+
+# Expose ports for Jupyter and IPFS
+# Jupyter
+EXPOSE 8888 
+# IPFS swarm
+EXPOSE 4001  
+# IPFS API
+EXPOSE 5001  
+# IPFS Gateway
+EXPOSE 8080 
+
+# Create scripts directory and copy startup scripts
+RUN mkdir -p /scripts
+
+COPY scripts/digitalocean_start.sh /scripts/digitalocean_start.sh
+COPY scripts/install_packages.sh /scripts/install_packages.sh
+
+# Make the scripts executable
+RUN chmod +x /scripts/digitalocean_start.sh /scripts/install_packages.sh
+
+# Set Digital Ocean specific environment variables
+ENV DO_APP_PLATFORM=true
+
+# Use CMD instead of ENTRYPOINT for Digital Ocean App Platform compatibility
+CMD ["/bin/bash", "/scripts/digitalocean_start.sh"]
+</file>
+
+<file path="Dockerfile.jupyter">
+# Dockerfile.jupyter
+FROM --platform=linux/amd64 python:3.12.7-slim
+
+# Install system dependencies, IPFS, and build tools
+# build-essential: Provides GCC compiler and build tools for C extensions
+# python3-dev: Includes Python headers needed for building C extensions
+# libffi-dev: Required for Foreign Function Interface
+# libssl-dev: Needed for cryptographic operations
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    wget \
+    build-essential \
+    python3-dev \
+    python3-venv \
+    libffi-dev \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+ARG KUBO_VERSION=0.33.2
+
+# Install IPFS with architecture detection
+RUN arch=$(uname -m) && \
+    if [ "$arch" = "aarch64" ]; then \
+    IPFS_ARCH="arm64"; \
+    else \
+    IPFS_ARCH="amd64"; \
+    fi && \
+    wget "https://dist.ipfs.tech/kubo/v${KUBO_VERSION}/kubo_v${KUBO_VERSION}_linux-${IPFS_ARCH}.tar.gz" && \
+    tar -xvzf "kubo_v${KUBO_VERSION}_linux-${IPFS_ARCH}.tar.gz" && \
+    cd kubo && \
+    bash install.sh && \
+    cd .. && \
+    rm -rf "kubo_v${KUBO_VERSION}_linux-${IPFS_ARCH}.tar.gz"
+
+# <----------------- UV installation ----------------->
+# The installer requires curl (and certificates) to download the release archive
+RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates
+
+# Download the latest installer
+ADD https://astral.sh/uv/install.sh /uv-installer.sh
+
+# Run the installer then remove it
+RUN sh /uv-installer.sh && rm /uv-installer.sh
+
+# Ensure the installed binary is on the `PATH`
+ENV PATH="/root/.local/bin/:$PATH"
+
+# <----------------- End of UV installation ----------------->
+
+# Create a directory for UV virtual environment
+# We use UV's native virtual environment instead of venv
+ENV VIRTUAL_ENV=/opt/venv
+RUN uv venv $VIRTUAL_ENV
+
+# Add virtual environment to PATH
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
+# Install base packages using UV
+COPY requirements.txt .
+RUN uv pip install --no-cache -r requirements.txt
+
+# Create requirements directory
+RUN mkdir -p /opt/requirements
+
+# Initialize IPFS with default settings and enable AutoTLS
+RUN ipfs init && \
+    ipfs config --json AutoTLS '{"Enabled": true, "AutoWSS": true}'
+
+# Set up working directory
+WORKDIR /notebooks
+
+# Copy notebooks directly from the build context for railway (?? This isn't needed for codespaces or local builds)
+COPY notebooks/* /notebooks/
+
+# Expose ports for Jupyter and IPFS
+# Jupyter
+EXPOSE 8888 
+# IPFS swarm
+EXPOSE 4001  
+# IPFS API
+EXPOSE 5001  
+# IPFS Gateway
+EXPOSE 8080 
+
+# Copy and set up scripts
+COPY scripts/start.sh /scripts/start.sh
+COPY scripts/install_packages.sh /scripts/install_packages.sh
+RUN chmod +x /scripts/start.sh /scripts/install_packages.sh
+
+CMD ["/scripts/start.sh"]
+</file>
+
+<file path="scripts/start.sh">
+#!/bin/bash
+# /scripts/start.sh
+
+# Debug Railway deployment
+echo "=== Railway Debug ==="
+echo "Working Directory: $(pwd)"
+echo "Notebook Directory Contents:"
+ls -la /notebooks
+
+# Enable AutoTLS debug logging
+export GOLOG_LOG_LEVEL="error,autotls=debug"
+
+# Wait a bit for gitSync (if it's running)
+sleep 10
+
+# Retrieve the peer ID from IPFS config (ensure your node is initialized)
+PEER_ID=$(ipfs config Identity.PeerID)
+if [ -z "$PEER_ID" ]; then
+    echo "Error: Unable to retrieve peer ID. Make sure your IPFS node is initialized."
+    exit 1
+fi
+echo "Using peer ID: $PEER_ID"
+
+# Define the WS address you want to add
+# WS_ADDR="/ip4/0.0.0.0/tcp/4001/ws"
+
+# # Get current swarm addresses as a JSON string
+# CURRENT_SWARM=$(ipfs config Addresses.Swarm)
+# echo "Current Swarm addresses: $CURRENT_SWARM"
+
+# # Check if the WS address is already in the array
+# if [[ "$CURRENT_SWARM" == *"$WS_ADDR"* ]]; then
+#   echo "WebSocket address already exists in swarm configuration."
+#   UPDATED_SWARM="$CURRENT_SWARM"
+# else
+#   # If the current array is empty "[]", then build a new array with WS_ADDR
+#   if [ "$CURRENT_SWARM" == "[]" ]; then
+#     UPDATED_SWARM='["'"$WS_ADDR"'"]'
+#   else
+#     # Remove the trailing ']' from CURRENT_SWARM and append the new address.
+#     UPDATED_SWARM="${CURRENT_SWARM%?},\"$WS_ADDR\"]"
+#   fi
+#   echo "Updated Swarm addresses: $UPDATED_SWARM"
+#   # Update the configuration
+#   ipfs config --json Addresses.Swarm "$UPDATED_SWARM"
+# fi
+
+# Define the WS address you want to add
+# WS_ADDR="/ip4/0.0.0.0/tcp/4001/ws"
+
+# # Get current swarm addresses as a JSON string
+# CURRENT_SWARM=$(ipfs config Addresses.Swarm)
+# echo "Current Swarm addresses: $CURRENT_SWARM"
+
+# # Check if the WS address is already in the array
+# if [[ "$CURRENT_SWARM" == *"$WS_ADDR"* ]]; then
+#   echo "WebSocket address already exists in swarm configuration."
+#   UPDATED_SWARM="$CURRENT_SWARM"
+# else
+#   # If the current array is empty "[]", then build a new array with WS_ADDR
+#   if [ "$CURRENT_SWARM" == "[]" ]; then
+#     UPDATED_SWARM='["'"$WS_ADDR"'"]'
+#   else
+#     # Remove the trailing ']' from CURRENT_SWARM and append the new address.
+#     UPDATED_SWARM="${CURRENT_SWARM%?},\"$WS_ADDR\"]"
+#   fi
+#   echo "Updated Swarm addresses: $UPDATED_SWARM"
+#   # Update the configuration
+#   ipfs config --json Addresses.Swarm "$UPDATED_SWARM"
+# fi
+
+
+# Build the list of announce addresses for IPFS
+ANNOUNCE_ADDRS=()
+
+# Build the list of append announce addresses for IPFS (for manual port forwarding)
+APPEND_ANNOUNCE_ADDRS=()
+
+if [[ -n "$RAILWAY_TCP_PROXY_DOMAIN" && -n "$RAILWAY_TCP_PROXY_PORT" ]]; then
+    echo "Adding TCP proxy address for IPFS (plain TCP)..."
+    # Announce for TCP connections with peer ID appended
+    TCP_ADDR="/dns4/$RAILWAY_TCP_PROXY_DOMAIN/tcp/$RAILWAY_TCP_PROXY_PORT/tls/sni/$RAILWAY_TCP_PROXY_DOMAIN/ipfs/$PEER_ID"
+    ANNOUNCE_ADDRS+=("$TCP_ADDR")
+
+    BASIC_ADDR="/dns4/$RAILWAY_TCP_PROXY_DOMAIN/tcp/$RAILWAY_TCP_PROXY_PORT"
+    APPEND_ANNOUNCE_ADDRS+=("$BASIC_ADDR")
+
+    # echo "Adding public domain address for WebSocket connections..."
+    # Announce for WebSocket connections using the same external mapping,
+    # with '/ws' appended.
+    # WS_ADDR="/dns4/$RAILWAY_TCP_PROXY_DOMAIN/tcp/$RAILWAY_TCP_PROXY_PORT/tls/sni/$RAILWAY_TCP_PROXY_DOMAIN/ws/p2p/$PEER_ID"
+    # ANNOUNCE_ADDRS+=("$WS_ADDR")
+fi
+
+if [ ${#ANNOUNCE_ADDRS[@]} -gt 0 ]; then
+    # Manually build a JSON array without jq
+    JSON_ADDRS="["
+    for addr in "${ANNOUNCE_ADDRS[@]}"; do
+        JSON_ADDRS+="\"$addr\","
+    done
+    JSON_ADDRS="${JSON_ADDRS%,}"  # remove trailing comma
+    JSON_ADDRS+="]"
+    
+    echo "Announcing addresses: $JSON_ADDRS"
+    ipfs config --json Addresses.Announce "$JSON_ADDRS"
+fi
+
+if [ ${#APPEND_ANNOUNCE_ADDRS[@]} -gt 0 ]; then
+    # Manually build a JSON array without jq
+    JSON_ADDRS="["
+    for addr in "${APPEND_ANNOUNCE_ADDRS[@]}"; do
+        JSON_ADDRS+="\"$addr\","
+    done
+    JSON_ADDRS="${JSON_ADDRS%,}"  # remove trailing comma
+    JSON_ADDRS+="]"
+
+    echo "Announcing append addresses: $JSON_ADDRS"
+    ipfs config --json Addresses.AppendAnnounce "$JSON_ADDRS"
+fi
+
+# This tells your node not to disable NAT port mapping—so if you're doing manual port forwarding, Kubo will try to use that public mapping to determine reachability.
+ipfs config --json Swarm.DisableNatPortMap false
+
+# Enable AutoTLS settings.
+# AutoTLS.AutoWSS=true tells Kubo to add a secure WebSocket listener on the /tcp port.
+ipfs config --json AutoTLS.Enabled true
+ipfs config --json AutoTLS.AutoWSS true
+# Optionally, you can set the domain suffix if needed:
+# ipfs config --json AutoTLS.DomainSuffix "libp2p.direct"
+
+echo "Current AutoTLS configuration:"
+ipfs config AutoTLS
+
+# Start IPFS daemon in the background
+ipfs daemon --enable-pubsub-experiment --migrate=true &
+
+# Wait for IPFS to start
+sleep 5
+
+# Start Jupyter Lab
+jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.allow_origin='*'
+</file>
+
+</files>

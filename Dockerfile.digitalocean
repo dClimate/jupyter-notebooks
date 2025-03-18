@@ -95,5 +95,9 @@ RUN chmod +x /scripts/digitalocean_start.sh /scripts/install_packages.sh
 # Set Digital Ocean specific environment variables
 ENV DO_APP_PLATFORM=true
 
+RUN ls -la /scripts
+RUN echo "TEST"
+RUN ls -la 
+
 # Use CMD instead of ENTRYPOINT for Digital Ocean App Platform compatibility
 CMD ["/bin/bash", "/scripts/digitalocean_start.sh"]
