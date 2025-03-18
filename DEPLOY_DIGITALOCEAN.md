@@ -14,10 +14,9 @@ This project includes dedicated files for Digital Ocean App Platform deployment:
 
 - `Dockerfile.digitalocean`: A Docker configuration specifically optimized for Digital Ocean
 - `app.yaml`: The Digital Ocean App Platform specification file
-- `scripts/digitalocean_start.sh`: A dedicated startup script for Digital Ocean App Platform
 - `Procfile`: Defines the web process for Digital Ocean
 
-These files are maintained separately from the local development configuration to keep both environments working correctly.
+The current implementation embeds the startup scripts directly into the Dockerfile to ensure they're available at runtime, avoiding potential file path issues.
 
 ## Deployment Steps
 
@@ -26,7 +25,6 @@ These files are maintained separately from the local development configuration t
 Make sure your code is in a GitHub repository, including all the files modified for Digital Ocean App Platform:
 - `app.yaml`
 - `Dockerfile.digitalocean`
-- `scripts/digitalocean_start.sh`
 - `Procfile`
 
 ### 2. Deploy with the Digital Ocean Web Interface
@@ -130,6 +128,21 @@ If you encounter the error "failed to launch: determine start command: process t
    ```
 
 The current setup includes both solutions for maximum compatibility.
+
+### "No such file or directory" Error for Script Files
+
+If you encounter an error like "/bin/bash: /scripts/digitalocean_start.sh: No such file or directory", it means the script file is not being found in the container. This could happen if:
+
+1. The script file is not properly copied during the Docker build process
+2. The script file is not in your GitHub repository
+3. There are path or permission issues
+
+The current solution:
+- Embeds the script content directly in the Dockerfile using `echo` commands
+- Creates the scripts directory explicitly with `mkdir -p /scripts`
+- Sets proper permissions with `chmod +x`
+
+This approach ensures the scripts are always available in the container, regardless of the repository structure.
 
 ### Check Logs
 
