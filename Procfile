@@ -1,1 +1,0 @@
-web: /bin/bash /scripts/digitalocean_start.sh 
