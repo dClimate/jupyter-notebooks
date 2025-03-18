@@ -15,6 +15,7 @@ This project includes dedicated files for Digital Ocean App Platform deployment:
 - `Dockerfile.digitalocean`: A Docker configuration specifically optimized for Digital Ocean
 - `app.yaml`: The Digital Ocean App Platform specification file
 - `scripts/digitalocean_start.sh`: A dedicated startup script for Digital Ocean App Platform
+- `Procfile`: Defines the web process for Digital Ocean
 
 These files are maintained separately from the local development configuration to keep both environments working correctly.
 
@@ -26,6 +27,7 @@ Make sure your code is in a GitHub repository, including all the files modified 
 - `app.yaml`
 - `Dockerfile.digitalocean`
 - `scripts/digitalocean_start.sh`
+- `Procfile`
 
 ### 2. Deploy with the Digital Ocean Web Interface
 
@@ -106,6 +108,25 @@ If you encounter the error "Unable to detect a run command", there are two ways 
    ```dockerfile
    # Use CMD instead of ENTRYPOINT for Digital Ocean App Platform compatibility
    CMD ["/bin/bash", "/scripts/digitalocean_start.sh"]
+   ```
+
+The current setup includes both solutions for maximum compatibility.
+
+### "Process type web was not found" Error
+
+If you encounter the error "failed to launch: determine start command: process type web was not found", there are two ways to fix it:
+
+1. Add a `type: web` to your service in the `app.yaml` file:
+   ```yaml
+   services:
+     - name: jupyter
+       type: web
+       # other configurations...
+   ```
+
+2. Add a `Procfile` to your repository with a web process defined:
+   ```
+   web: /bin/bash /scripts/digitalocean_start.sh
    ```
 
 The current setup includes both solutions for maximum compatibility.
