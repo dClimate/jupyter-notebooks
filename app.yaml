@@ -6,6 +6,7 @@ services:
       branch: main
       deploy_on_push: true
       repo: https://github.com/dClimate/jupyter-notebooks
+    environment_slug: docker
     dockerfile_path: Dockerfile.digitalocean
     http_port: 8888
     run_command: /bin/bash /scripts/digitalocean_start.sh
