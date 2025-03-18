@@ -96,7 +96,6 @@ RUN chmod +x /scripts/digitalocean_start.sh /scripts/install_packages.sh
 ENV DO_APP_PLATFORM=true
 
 RUN ls -la /scripts
-RUN echo "TEST"
 RUN ls -la 
 
 # Use CMD instead of ENTRYPOINT for Digital Ocean App Platform compatibility
