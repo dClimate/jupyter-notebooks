@@ -1,0 +1,22 @@
+name: zarr-getting-started
+services:
+  - name: jupyter
+    github:
+      branch: main
+      deploy_on_push: true
+      repo: https://github.com/dClimate/jupyter-notebooks
+    dockerfile_path: Dockerfile.digitalocean
+    http_port: 8888
+    routes:
+      - path: /
+    envs:
+      - key: JUPYTER_TOKEN
+        value: your_secure_token
+        type: SECRET
+    internal_ports:
+      - port: 4001
+        protocol: tcp 
+      - port: 5001
+        protocol: tcp
+      - port: 8080
+        protocol: tcp 
