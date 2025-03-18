@@ -86,80 +86,10 @@ EXPOSE 8080
 # Create scripts directory and copy startup scripts
 RUN mkdir -p /scripts
 
-# Copy the startup script content directly
-RUN echo '#!/bin/bash\n\
-# Debug deployment info\n\
-echo "=== Digital Ocean App Platform Deployment ==="\n\
-echo "Working Directory: $(pwd)"\n\
-echo "Notebook Directory Contents:"\n\
-ls -la /notebooks\n\
-\n\
-# Enable AutoTLS debug logging\n\
-export GOLOG_LOG_LEVEL="error,autotls=debug"\n\
-\n\
-# Retrieve the peer ID from IPFS config\n\
-PEER_ID=$(ipfs config Identity.PeerID)\n\
-if [ -z "$PEER_ID" ]; then\n\
-    echo "Error: Unable to retrieve peer ID. Make sure your IPFS node is initialized."\n\
-    exit 1\n\
-fi\n\
-echo "Using peer ID: $PEER_ID"\n\
-\n\
-# Digital Ocean App Platform specific configuration\n\
-echo "Configuring IPFS for Digital Ocean App Platform..."\n\
-\n\
-# Get the public-facing URL assigned by Digital Ocean\n\
-if [ -n "$APP_URL" ]; then\n\
-    APP_DOMAIN=$(echo "$APP_URL" | sed '"'"'s|^https?://||'"'"' | sed '"'"'s|/.*$||'"'"')\n\
-    \n\
-    echo "App domain: $APP_DOMAIN"\n\
-    \n\
-    # Configure announce addresses\n\
-    DO_ANNOUNCE_ADDRS="[\"/dns4/$APP_DOMAIN/tcp/443/https\"]"\n\
-    echo "Setting announce addresses: $DO_ANNOUNCE_ADDRS"\n\
-    ipfs config --json Addresses.Announce "$DO_ANNOUNCE_ADDRS"\n\
-else\n\
-    echo "No APP_URL environment variable found"\n\
-fi\n\
-\n\
-# Disable NAT port mapping in cloud environment\n\
-ipfs config --json Swarm.DisableNatPortMap true\n\
-\n\
-# Enable AutoTLS settings.\n\
-ipfs config --json AutoTLS.Enabled true\n\
-ipfs config --json AutoTLS.AutoWSS true\n\
-\n\
-echo "Current AutoTLS configuration:"\n\
-ipfs config AutoTLS\n\
-\n\
-# Start IPFS daemon in the background\n\
-echo "Starting IPFS daemon..."\n\
-ipfs daemon --enable-pubsub-experiment --migrate=true &\n\
-\n\
-# Wait for IPFS to start\n\
-sleep 5\n\
-\n\
-# Determine Jupyter token\n\
-JUPYTER_TOKEN_VALUE=${JUPYTER_TOKEN:-"default_token"}\n\
-echo "Using Jupyter token: $JUPYTER_TOKEN_VALUE"\n\
-\n\
-# Start Jupyter Lab\n\
-echo "Starting Jupyter Lab..."\n\
-jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token="$JUPYTER_TOKEN_VALUE" --NotebookApp.allow_origin='"'"'*'"'"'' > /scripts/digitalocean_start.sh
+COPY scripts/digitalocean_start.sh /scripts/digitalocean_start.sh
+COPY scripts/install_packages.sh /scripts/install_packages.sh
 
-# Create a basic install_packages.sh script
-RUN echo '#!/bin/bash\n\
-# Check if there are any additional requirement files\n\
-if [ -d "/opt/requirements" ]; then\n\
-    for req in /opt/requirements/*.txt; do\n\
-        if [ -f "$req" ]; then\n\
-            echo "Installing packages from $req"\n\
-            uv pip install --no-cache -r "$req"\n\
-        fi\n\
-    done\n\
-fi' > /scripts/install_packages.sh
-
-# Make scripts executable
+# Make the scripts executable
 RUN chmod +x /scripts/digitalocean_start.sh /scripts/install_packages.sh
 
 # Set Digital Ocean specific environment variables
