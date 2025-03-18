@@ -1,6 +1,7 @@
 name: zarr-getting-started
 services:
   - name: jupyter
+    type: web
     github:
       branch: main
       deploy_on_push: true
