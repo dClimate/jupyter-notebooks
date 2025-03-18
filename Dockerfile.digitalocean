@@ -98,5 +98,9 @@ ENV DO_APP_PLATFORM=true
 RUN ls -la /scripts
 RUN ls -la 
 
+# Add a health check that waits up to 4 minutes before starting
+HEALTHCHECK --interval=30s --timeout=5s --start-period=240s --retries=3 \
+  CMD curl -f http://127.0.0.1:8888/ || exit 1
+
 # Use CMD instead of ENTRYPOINT for Digital Ocean App Platform compatibility
 CMD ["/bin/bash", "/scripts/digitalocean_start.sh"]
