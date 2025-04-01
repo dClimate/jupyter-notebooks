@@ -1,76 +1,48 @@
 {
 	"$schema": "https://railway.app/railway.schema.json",
-	"services": [
-		{
-			"name": "jupyter-ipfs",
-			"build": {
-				"builder": "DOCKERFILE",
-				"dockerfilePath": "Dockerfile.jupyter"
-			},
-			"deploy": {
-				"startCommand": "/scripts/start.sh",
-				"restartPolicyType": "ON_FAILURE",
-				"restartPolicyMaxRetries": 10,
-				"gitSync": {
-					"enable": true,
-					"sourceDir": "notebooks",
-					"targetDir": "/notebooks",
-					"interval": "30s"
-				}
-			},
-			"variables": {
-				"JUPYTER_TOKEN": {
-					"description": "Required: Secure token for Jupyter authentication",
-					"required": true,
-					"sensitive": true
-				},
-				"IPFS_WS_PROXY_URL": {
-					"description": "Auto-injected: Public URL of the WebSocket proxy service",
-					"value": "${{ services.ipfs-ws-proxy.PUBLIC_DOMAIN }}"
-				}
-			},
+	"build": {
+		"builder": "DOCKERFILE",
+		"dockerfilePath": "Dockerfile.jupyter"
+	},
+	"deploy": {
+		"startCommand": "/scripts/start.sh",
+		"restartPolicyType": "ON_FAILURE",
+		"restartPolicyMaxRetries": 10,
+		"gitSync": {
+			"enable": true,
+			"sourceDir": "notebooks",
+			"targetDir": "/notebooks",
+			"interval": "30s"
+		}
+	},
+	"variables": {
+		"JUPYTER_TOKEN": {
+			"description": "Token for Jupyter authentication",
+			"required": true,
+			"sensitive": true
+		}
+	},
+	"environments": {
+		"production": {
 			"ports": [
 				{
 					"containerPort": 8888,
 					"protocol": "tcp",
-					"published": true,
-					"comment": "Jupyter Lab (Public HTTP/S)"
+					"published": true
 				},
 				{
 					"containerPort": 4001,
-					"protocol": "tcp",
-					"comment": "IPFS Swarm (Internal WS for Proxy)"
-				},
-				{
-					"containerPort": 5001,
-					"protocol": "tcp",
-					"comment": "IPFS API (Internal)"
+					"protocol": "tcp"
 				},
 				{
 					"containerPort": 8080,
-					"protocol": "tcp",
-					"comment": "IPFS Gateway (Internal)"
-				}
-			]
-		},
-		{
-			"name": "ipfs-ws-proxy",
-			"build": {
-				"builder": "DOCKERFILE",
-				"dockerfilePath": "Dockerfile.nginx"
-			},
-			"deploy": {
-				"restartPolicyType": "ON_FAILURE",
-				"restartPolicyMaxRetries": 5
-			},
-			"ports": [
+					"protocol": "tcp"
+				},
 				{
-					"containerPort": 80,
-					"protocol": "tcp",
-					"published": true,
-					"comment": "Nginx Proxy (Public WSS)"
+					"containerPort": 5001,
+					"protocol": "tcp"
 				}
 			]
 		}
-	]
+	}
 }
