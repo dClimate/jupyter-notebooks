@@ -120,7 +120,7 @@ sleep 5
 
 # Start Jupyter Lab
 echo "Starting Jupyter Lab..."
-jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.allow_origin='*'
+jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token="$JUPYTER_TOKEN_VALUE" --NotebookApp.allow_origin='*' 
 
 # Keep container running if Jupyter exits (optional, for debugging)
 # wait
