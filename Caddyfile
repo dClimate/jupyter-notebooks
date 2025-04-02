@@ -4,20 +4,14 @@
 	# log {
 	#	output stderr
 	# }
-
-	# Caddy will automatically use the $PORT variable provided by Railway
-	# for its HTTP port if run as non-root or configured.
-	# We don't configure HTTPS here; Railway handles TLS termination externally.
 }
 
-# Define the main site block listening on the port Railway provides
-# Caddy automatically uses $PORT if available
+# Define the main site block listening on the port Railway provides ($PORT)
 http://:{$PORT} {
 	# Reverse proxy all requests to the internal jupyter-ipfs service.
-	# We'll inject the private domain via an environment variable JUPYTER_IPFS_PRIVATE_HOST.
-	# Caddy uses {env.VAR_NAME} syntax. Port 4001 is the internal IPFS WS port.
-	reverse_proxy http://{env.JUPYTER_IPFS_PRIVATE_HOST}:4001 {
-		# Caddy automatically handles WebSocket headers (Upgrade, Connection)
-		# by default, so no specific websocket configuration is usually needed.
-	}
+	# Use the environment variable injected by Railway.
+	# Port 4001 is the internal IPFS WS port.
+	# --- MODIFIED LINE: Removed http:// ---
+	reverse_proxy {env.JUPYTER_IPFS_PRIVATE_HOST}:4001
+	# --- END MODIFIED LINE ---
 }
