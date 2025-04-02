@@ -19,47 +19,28 @@ if [ -z "$PEER_ID" ]; then
 fi
 echo "Using peer ID: $PEER_ID"
 
-# --- Configure Internal WebSocket Listeners ---
-# Get current Addresses.Swarm and remove last bracket (to append entries)
-# Use default [] if config key doesn't exist yet
-EXISTING_SWARM=$(ipfs config Addresses.Swarm || echo "[]")
-EXISTING_SWARM_CONTENT=$(echo "$EXISTING_SWARM" | sed 's/\[//g' | sed 's/\]//g' | sed 's/,$//g' | sed 's/^,//g') # Extract content inside []
+# --- Configure Internal WebSocket Listeners using jq ---
+echo "Configuring Internal WebSocket listeners..."
+ADDR1="/ip4/0.0.0.0/tcp/4001/ws"
+ADDR2="/ip6/::/tcp/4001/ws"
 
-# Define internal WebSocket listeners
-WS_IPV4="/ip4/0.0.0.0/tcp/4001/ws"
-WS_IPV6="/ip6/::/tcp/4001/ws"
+# Get current swarm addresses, default to empty array '[]' if command fails or key missing
+CURRENT_SWARM_JSON=$(ipfs config Addresses.Swarm || echo "[]")
 
-# Initialize NEW_SWARM with current entries if any
-if [ -n "$EXISTING_SWARM_CONTENT" ]; then
-    NEW_SWARM="[$EXISTING_SWARM_CONTENT"
-else
-    NEW_SWARM="["
-fi
+# Use jq to add the desired addresses and ensure uniqueness
+# '. + [$addr1, $addr2]' adds the new addresses (even if duplicate)
+# '| unique' removes duplicates, resulting in the desired state
+NEW_SWARM_JSON=$(echo "$CURRENT_SWARM_JSON" | jq --arg addr1 "$ADDR1" --arg addr2 "$ADDR2" \
+    '(. + [$addr1, $addr2]) | unique')
 
-needs_update=false
-# Check if /ws entries are missing, then add them
-if ! echo "$EXISTING_SWARM_CONTENT" | grep -q -F "$WS_IPV4"; then
-    echo "Adding Internal WebSocket listener for IPv4..."
-    if [ -n "$EXISTING_SWARM_CONTENT" ] && [[ "$NEW_SWARM" != "[" ]]; then NEW_SWARM="$NEW_SWARM,"; fi
-    NEW_SWARM="$NEW_SWARM \"$WS_IPV4\""
-    needs_update=true
-fi
-
-if ! echo "$EXISTING_SWARM_CONTENT" | grep -q -F "$WS_IPV6"; then
-    echo "Adding Internal WebSocket listener for IPv6..."
-    if [ -n "$EXISTING_SWARM_CONTENT" ] && [[ "$NEW_SWARM" != "[" ]] && [[ "$NEW_SWARM" != *"\"$WS_IPV4\""* ]]; then NEW_SWARM="$NEW_SWARM,"; fi # Add comma only if needed
-    if [[ "$NEW_SWARM" != "[" && ! "$NEW_SWARM" =~ \",$ ]]; then NEW_SWARM="$NEW_SWARM,"; fi # Ensure comma if needed
-    NEW_SWARM="$NEW_SWARM \"$WS_IPV6\""
-    needs_update=true
-fi
-
-# Close JSON array
-NEW_SWARM="$NEW_SWARM]"
-
-# Apply the updated Swarm configuration only if changes were made
-if [ "$needs_update" = true ] ; then
-    echo "Updating Addresses.Swarm: $NEW_SWARM"
-    ipfs config --json Addresses.Swarm "$NEW_SWARM"
+# Check if the new JSON is different from the old one before applying
+if [[ "$CURRENT_SWARM_JSON" != "$NEW_SWARM_JSON" ]]; then
+    echo "Updating Addresses.Swarm to: $NEW_SWARM_JSON"
+    ipfs config --json Addresses.Swarm "$NEW_SWARM_JSON"
+    if [ $? -ne 0 ]; then
+         echo "Error applying Swarm config!"
+         # Optionally exit or add more error handling
+    fi
 else
     echo "Internal Addresses.Swarm already configured correctly."
 fi
