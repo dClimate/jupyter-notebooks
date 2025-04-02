@@ -2,18 +2,24 @@
 	"$schema": "https://railway.app/railway.schema.json",
 	"build": {
 		"builder": "DOCKERFILE",
-		"dockerfilePath": "Dockerfile.nginx"
+		"dockerfilePath": "Dockerfile.caddy"
 	},
 	"deploy": {
 		"restartPolicyType": "ON_FAILURE",
 		"restartPolicyMaxRetries": 5
+	},
+	"variables": {
+		"JUPYTER_IPFS_PRIVATE_HOST": {
+			"description": "Auto-injected: Private hostname of the jupyter-ipfs service",
+			"value": "${{ services.jupyter-ipfs.RAILWAY_PRIVATE_DOMAIN }}"
+		}
 	},
 	"ports": [
 		{
 			"containerPort": 80,
 			"protocol": "tcp",
 			"published": true,
-			"comment": "Nginx Proxy (Public WSS)"
+			"comment": "Caddy Proxy (Public WSS -> Internal WS on :4001)"
 		}
 	]
 }

@@ -1,0 +1,9 @@
+# Dockerfile.caddy
+FROM caddy:2-alpine
+
+# Copy the Caddyfile into the standard configuration location
+COPY Caddyfile /etc/caddy/Caddyfile
+
+# No EXPOSE or CMD needed usually, the base image handles it.
+# It will run Caddy using /etc/caddy/Caddyfile and listen on $PORT.
+# Railway sets $PORT based on the railway.json "containerPort".
