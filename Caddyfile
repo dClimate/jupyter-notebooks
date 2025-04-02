@@ -3,25 +3,23 @@
     log {
         # Log to stderr so it appears in Railway logs
         output stderr
-        # Use JSON format for clarity, include the variable value
-        format json { # <<< Start JSON format definition
-            # Define JSON fields directly using key = value pairs
-            # Standard log fields using placeholders:
-            level = "{log.level}"
-            ts = "{log.time}" # Using standard Caddy time format (can customize if needed)
-            msg = "{log.msg}"
-            request = "{log.request>method} {log.request>uri}"
-            status = "{log.response>status}"
-            size = "{log.response>size}"
-            duration = "{log.duration}"
-            remote_ip = "{log.request>remote_ip}"
-            proto = "{log.request>proto}"
-
-            # Your custom field with the environment variable:
-            private_host_var = "{env.JUPYTER_IPFS_PRIVATE_HOST}"
-
-        } # <<< End JSON format definition
-        level INFO # Or DEBUG for more verbosity
+        # # Use JSON format for clarity, include the variable value
+        # format json {
+        #     time_format rfc3339
+        #     # Add a custom field 'private_host_var' using the placeholder
+        #     field private_host_var "{env.JUPYTER_IPFS_PRIVATE_HOST}"
+        #     # Add other useful fields
+        #     field level "{log.level}"
+        #     field ts "{log.time}"
+        #     field msg "{log.msg}"
+        #     field request "{log.request>method} {log.request>uri}"
+        #     field status "{log.response>status}"
+        #     field size "{log.response>size}"
+        #     field duration "{log.duration}"
+        #     field remote_ip "{log.request>remote_ip}"
+        #     field proto "{log.request>proto}"
+        # }
+        level DEBUG # Or DEBUG for more verbosity
     }
 }
 
