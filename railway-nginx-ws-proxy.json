@@ -11,7 +11,7 @@
 	"variables": {
 		"JUPYTER_IPFS_PRIVATE_HOST": {
 			"description": "Auto-injected: Private hostname of the jupyter-ipfs service",
-			"value": "${{ services.jupyter-ipfs.RAILWAY_PRIVATE_DOMAIN }}"
+			"value": "${{jupyter-ipfs.RAILWAY_PUBLIC_DOMAIN}}"
 		}
 	},
 	"ports": [
