@@ -118,6 +118,10 @@ ipfs daemon --enable-pubsub-experiment --migrate=true &
 # Wait for IPFS to start
 sleep 5
 
+# Determine Jupyter token
+JUPYTER_TOKEN_VALUE=${JUPYTER_TOKEN:-"default_token"}
+echo "Using Jupyter token: $JUPYTER_TOKEN_VALUE"
+
 # Start Jupyter Lab
 echo "Starting Jupyter Lab..."
 jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token="$JUPYTER_TOKEN_VALUE" --NotebookApp.allow_origin='*' 
