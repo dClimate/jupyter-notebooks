@@ -19,12 +19,12 @@ http://:{$PORT} {
             level_format   "upper"        # Uppercase log levels
         }
         format append {
-            server_env {env.JUPYTER_IPFS_PRIVATE_HOST}
+            server_env {env.jupyter-ipfs}
              static_field static_value
         }
     }
 
-    reverse_proxy {env.JUPYTER_IPFS_PRIVATE_HOST}:4001
+    reverse_proxy {env.jupyter-ipfs}:4001
 }
 
 
