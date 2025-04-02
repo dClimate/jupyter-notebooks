@@ -1,19 +1,32 @@
 # /Caddyfile
 {
-	# Global options can go here if needed
+    # Optional global config
 }
 
 http://:{$PORT} {
-	log {
-		output stderr
-		level INFO
-		format console {
-			template "[{ts}] {level} {msg} REQ: {request>method} {request>uri} FROM: {request>remote_ip} HOST_VAR: {env.JUPYTER_IPFS_PRIVATE_HOST}"
-		}
-	}
+    log {
+        output stdout
+        format json {
+            message_key     msg           # Key for the log message
+            level_key      severity       # Key for the log level
+            time_key       timestamp      # Key for the timestamp
+            name_key       logger         # Key for the logger name
+            caller_key     function       # Key for the caller information
+            stacktrace_key stack          # Key for error stacktraces
+            time_format    "2006-01-02 15:04:05 MST"  # RFC3339-like format
+            time_local                    # Use local timezone
+            duration_format "ms"          # Show durations in milliseconds
+            level_format   "upper"        # Uppercase log levels
+        }
+        format append {
+            server_env {env.JUPYTER_IPFS_PRIVATE_HOST}
+             static_field static_value
+        }
+    }
 
-	reverse_proxy {env.JUPYTER_IPFS_PRIVATE_HOST}:4001
+    reverse_proxy {env.JUPYTER_IPFS_PRIVATE_HOST}:4001
 }
+
 
 
 # # /Caddyfile
