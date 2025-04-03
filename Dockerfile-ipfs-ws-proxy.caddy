@@ -1,4 +1,4 @@
-# Dockerfile.caddy
+# Dockerfile-ipfs-ws-proxy.caddy
 FROM caddy:2-alpine
 
 # Copy the Caddyfile into the standard configuration location
