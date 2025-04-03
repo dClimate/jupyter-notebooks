@@ -12,7 +12,9 @@ echo "Waiting 10s for services/sync..."
 sleep 10
 
 # Configure IPFS gateway to listen on both 
-ipfs config --json Addresses.Gateway '["/ip4/127.0.0.1/tcp/8080","/ip6/::1/tcp/8080"]'
+# ipfs config --json Addresses.Gateway '["/ip4/127.0.0.1/tcp/8080","/ip6/::1/tcp/8080"]'
+# Listen on all available IPv4 and IPv6 interfaces on port 8080
+ipfs config --json Addresses.Gateway '["/ip4/0.0.0.0/tcp/8080", "/ip6/::/tcp/8080"]'
 
 # Retrieve the peer ID from IPFS config (ensure your node is initialized)
 PEER_ID=$(ipfs config Identity.PeerID)
