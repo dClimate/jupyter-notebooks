@@ -11,6 +11,9 @@ ls -la /notebooks || echo "/notebooks not found or empty yet"
 echo "Waiting 10s for services/sync..."
 sleep 10
 
+# Configure IPFS gateway to listen on both 
+ipfs config --json Addresses.Gateway '["/ip4/127.0.0.1/tcp/8080","/ip6/::1/tcp/8080"]'
+
 # Retrieve the peer ID from IPFS config (ensure your node is initialized)
 PEER_ID=$(ipfs config Identity.PeerID)
 if [ -z "$PEER_ID" ]; then
