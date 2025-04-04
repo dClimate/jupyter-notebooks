@@ -26,7 +26,7 @@ http://:{$PORT} {
 
 	handle /webui* {
 		# Proxy authenticated requests to IPFS API port (5001, where webui lives)
-		reverse_proxy {env.IPFS_UPSTREAM_HOST}:5001/webui
+		reverse_proxy {env.jupyter-ipfs}:5001/webui
 	}
 
 	reverse_proxy {env.jupyter-ipfs}:8080
