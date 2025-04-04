@@ -24,6 +24,15 @@ http://:{$PORT} {
 		}
 	}
 
+    # Handle requests specifically for the IPFS RPC API
+    # Must come before a more general fallback
+	handle /api/v0* {
+		reverse_proxy {env.jupyter-ipfs}:5001 {
+            # Optional but good practice: Forward original scheme
+            # header_upstream X-Forwarded-Proto {scheme}
+        }
+	}
+
 	handle /webui* {
 		# Proxy authenticated requests to IPFS API port (5001, where webui lives)
 		reverse_proxy {env.jupyter-ipfs}:5001
