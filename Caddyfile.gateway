@@ -25,12 +25,6 @@ http://:{$PORT} {
 	}
 
 	handle /webui* {
-		# Enforce Basic Auth specifically for Web UI access.
-		# Reads WEBUI_USER and WEBUI_HASH from environment variables.
-		basicauth {
-			realm "IPFS Web UI Access" 
-			{env.WEBUI_USER} {env.WEBUI_HASH}
-		}
 		# Proxy authenticated requests to IPFS API port (5001, where webui lives)
 		reverse_proxy {env.IPFS_UPSTREAM_HOST}:5001/webui
 	}
