@@ -1,28 +1,39 @@
-# /Caddyfile
+# Caddyfile.gateway
 {
-    # Optional global config
+	# Optional global config
 }
 
 http://:{$PORT} {
-    log {
-        output stdout
-        format json {
-            message_key     msg           # Key for the log message
-            level_key      severity       # Key for the log level
-            time_key       timestamp      # Key for the timestamp
-            name_key       logger         # Key for the logger name
-            caller_key     function       # Key for the caller information
-            stacktrace_key stack          # Key for error stacktraces
-            time_format    "2006-01-02 15:04:05 MST"  # RFC3339-like format
-            time_local                    # Use local timezone
-            duration_format "ms"          # Show durations in milliseconds
-            level_format   "upper"        # Uppercase log levels
-        }
-        format append {
-            server_env {env.jupyter-ipfs}
-             static_field static_value
-        }
-    }
+	log {
+		output stdout
+		format json {
+			message_key msg # Key for the log message
+			level_key severity # Key for the log level
+			time_key timestamp # Key for the timestamp
+			name_key logger # Key for the logger name
+			caller_key function # Key for the caller information
+			stacktrace_key stack # Key for error stacktraces
+			time_format "2006-01-02 15:04:05 MST" # RFC3339-like format
+			time_local # Use local timezone
+			duration_format "ms" # Show durations in milliseconds
+			level_format "upper" # Uppercase log levels
+		}
+		format append {
+			server_env {env.jupyter-ipfs}
+			static_field static_value
+		}
+	}
 
-    reverse_proxy {env.jupyter-ipfs}:8080
+	handle /webui* {
+		# Enforce Basic Auth specifically for Web UI access.
+		# Reads WEBUI_USER and WEBUI_HASH from environment variables.
+		basicauth {
+			realm "IPFS Web UI Access" 
+			{env.WEBUI_USER} {env.WEBUI_HASH}
+		}
+		# Proxy authenticated requests to IPFS API port (5001, where webui lives)
+		reverse_proxy {env.IPFS_UPSTREAM_HOST}:5001/webui
+	}
+
+	reverse_proxy {env.jupyter-ipfs}:8080
 }
