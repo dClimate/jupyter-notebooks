@@ -11,6 +11,33 @@ ls -la /notebooks || echo "/notebooks not found or empty yet"
 echo "Waiting 10s for services/sync..."
 sleep 10
 
+# --- Dynamic CORS Configuration ---
+# Default list of allowed origins (for local testing or fallback)
+DEFAULT_ALLOWED_ORIGINS="\"http://localhost:3000\", \"http://127.0.0.1:5001\", \"https://webui.ipfs.io\""
+
+# Check if the dynamic Caddy proxy origin variable is set
+if [[ -n "$CADDY_PROXY_ORIGIN" ]]; then
+    echo "Using dynamic Caddy Proxy Origin for CORS: $CADDY_PROXY_ORIGIN"
+    # Construct the JSON array including the dynamic origin
+    # Ensure the variable content is correctly quoted within the JSON string
+    ALLOWED_ORIGINS_JSON="[\"$CADDY_PROXY_ORIGIN\", $DEFAULT_ALLOWED_ORIGINS]"
+else
+    echo "Warning: CADDY_PROXY_ORIGIN environment variable not set. Using default CORS origins."
+    # Fallback to only the default origins
+    ALLOWED_ORIGINS_JSON="[$DEFAULT_ALLOWED_ORIGINS]"
+fi
+
+echo "Setting API CORS Headers..."
+echo "Allowed Origins JSON: $ALLOWED_ORIGINS_JSON" # Log the final JSON string for debugging
+
+# Apply the dynamically constructed list of allowed origins
+ipfs config --json API.HTTPHeaders.Access-Control-Allow-Origin "$ALLOWED_ORIGINS_JSON"
+
+# Set other CORS headers (Methods, Credentials)
+ipfs config --json API.HTTPHeaders.Access-Control-Allow-Methods '["GET", "PUT", "POST"]'
+ipfs config --json API.HTTPHeaders.Access-Control-Allow-Credentials '["true"]'
+# --- End CORS Configuration ---
+
 # Configure IPFS gateway to listen on both 
 # ipfs config --json Addresses.Gateway '["/ip4/127.0.0.1/tcp/8080","/ip6/::1/tcp/8080"]'
 # Listen on all available IPv4 and IPv6 interfaces on port 8080
@@ -110,6 +137,10 @@ echo "Addresses.Announce:"
 ipfs config Addresses.Announce
 echo "AutoTLS:"
 ipfs config AutoTLS
+echo "Addresses.API:"
+ipfs config Addresses.API
+echo "API.HTTPHeaders:" # Verify CORS settings
+ipfs config API.HTTPHeaders # Add this line to see the applied headers in logs
 
 # Start IPFS daemon in the background
 echo "Starting IPFS daemon..."
