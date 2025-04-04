@@ -16,6 +16,11 @@ sleep 10
 # Listen on all available IPv4 and IPv6 interfaces on port 8080
 ipfs config --json Addresses.Gateway '["/ip4/0.0.0.0/tcp/8080", "/ip6/::/tcp/8080"]'
 
+# Configure IPFS API to listen on all interfaces <---
+# This makes BOTH the RPC API (/api/v0/) and the WebUI (/webui) accessible externally
+# Original "API": "/ip4/127.0.0.1/tcp/5001" default
+ipfs config --json Addresses.API '["/ip4/0.0.0.0/tcp/5001", "/ip6/::/tcp/5001"]'
+
 # Retrieve the peer ID from IPFS config (ensure your node is initialized)
 PEER_ID=$(ipfs config Identity.PeerID)
 if [ -z "$PEER_ID" ]; then
