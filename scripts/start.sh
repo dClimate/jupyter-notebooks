@@ -5,13 +5,48 @@
 echo "=== Railway Debug ==="
 echo "Working Directory: $(pwd)"
 echo "Notebook Directory Contents:"
-ls -la /notebooks
+ls -la /notebooks || echo "/notebooks not found or empty yet"
 
-# Enable AutoTLS debug logging
-export GOLOG_LOG_LEVEL="error,autotls=debug"
-
-# Wait a bit for gitSync (if it's running)
+# Wait a bit for potential gitSync or volume mounts
+echo "Waiting 10s for services/sync..."
 sleep 10
+
+# # --- Dynamic CORS Configuration ---
+# # Default list of allowed origins (for local testing or fallback)
+# DEFAULT_ALLOWED_ORIGINS="\"http://localhost:3000\", \"http://127.0.0.1:5001\", \"https://webui.ipfs.io\""
+
+# # Check if the dynamic Caddy proxy origin variable is set
+# if [[ -n "$CADDY_PROXY_ORIGIN" ]]; then
+#     echo "Using dynamic Caddy Proxy Origin for CORS: $CADDY_PROXY_ORIGIN"
+#     # Construct the JSON array including the dynamic origin
+#     # Ensure the variable content is correctly quoted within the JSON string
+#     ALLOWED_ORIGINS_JSON="[\"$CADDY_PROXY_ORIGIN\", $DEFAULT_ALLOWED_ORIGINS]"
+# else
+#     echo "Warning: CADDY_PROXY_ORIGIN environment variable not set. Using default CORS origins."
+#     # Fallback to only the default origins
+#     ALLOWED_ORIGINS_JSON="[$DEFAULT_ALLOWED_ORIGINS]"
+# fi
+
+# echo "Setting API CORS Headers..."
+# echo "Allowed Origins JSON: $ALLOWED_ORIGINS_JSON" # Log the final JSON string for debugging
+
+# # Apply the dynamically constructed list of allowed origins
+# ipfs config --json API.HTTPHeaders.Access-Control-Allow-Origin "$ALLOWED_ORIGINS_JSON"
+
+# # Set other CORS headers (Methods, Credentials)
+# ipfs config --json API.HTTPHeaders.Access-Control-Allow-Methods '["GET", "PUT", "POST"]'
+# ipfs config --json API.HTTPHeaders.Access-Control-Allow-Credentials '["true"]'
+# # --- End CORS Configuration ---
+
+# Configure IPFS gateway to listen on both 
+# ipfs config --json Addresses.Gateway '["/ip4/127.0.0.1/tcp/8080","/ip6/::1/tcp/8080"]'
+# Listen on all available IPv4 and IPv6 interfaces on port 8080
+ipfs config --json Addresses.Gateway '["/ip4/0.0.0.0/tcp/8080", "/ip6/::/tcp/8080"]'
+
+# Configure IPFS API to listen on all interfaces <---
+# This makes BOTH the RPC API (/api/v0/) and the WebUI (/webui) accessible externally
+# Original "API": "/ip4/127.0.0.1/tcp/5001" default
+ipfs config --json Addresses.API '["/ip4/0.0.0.0/tcp/5001", "/ip6/::/tcp/5001"]'
 
 # Retrieve the peer ID from IPFS config (ensure your node is initialized)
 PEER_ID=$(ipfs config Identity.PeerID)
@@ -21,121 +56,116 @@ if [ -z "$PEER_ID" ]; then
 fi
 echo "Using peer ID: $PEER_ID"
 
-# Define the WS address you want to add
-# WS_ADDR="/ip4/0.0.0.0/tcp/4001/ws"
+# --- Configure Internal WebSocket Listeners using jq ---
+echo "Configuring Internal WebSocket listeners..."
+ADDR1="/ip4/0.0.0.0/tcp/4001/ws"
+ADDR2="/ip6/::/tcp/4001/ws"
 
-# # Get current swarm addresses as a JSON string
-# CURRENT_SWARM=$(ipfs config Addresses.Swarm)
-# echo "Current Swarm addresses: $CURRENT_SWARM"
+# Get current swarm addresses, default to empty array '[]' if command fails or key missing
+CURRENT_SWARM_JSON=$(ipfs config Addresses.Swarm || echo "[]")
 
-# # Check if the WS address is already in the array
-# if [[ "$CURRENT_SWARM" == *"$WS_ADDR"* ]]; then
-#   echo "WebSocket address already exists in swarm configuration."
-#   UPDATED_SWARM="$CURRENT_SWARM"
-# else
-#   # If the current array is empty "[]", then build a new array with WS_ADDR
-#   if [ "$CURRENT_SWARM" == "[]" ]; then
-#     UPDATED_SWARM='["'"$WS_ADDR"'"]'
-#   else
-#     # Remove the trailing ']' from CURRENT_SWARM and append the new address.
-#     UPDATED_SWARM="${CURRENT_SWARM%?},\"$WS_ADDR\"]"
-#   fi
-#   echo "Updated Swarm addresses: $UPDATED_SWARM"
-#   # Update the configuration
-#   ipfs config --json Addresses.Swarm "$UPDATED_SWARM"
-# fi
+# Use jq to add the desired addresses and ensure uniqueness
+# '. + [$addr1, $addr2]' adds the new addresses (even if duplicate)
+# '| unique' removes duplicates, resulting in the desired state
+NEW_SWARM_JSON=$(echo "$CURRENT_SWARM_JSON" | jq --arg addr1 "$ADDR1" --arg addr2 "$ADDR2" \
+    '(. + [$addr1, $addr2]) | unique')
 
-# Define the WS address you want to add
-# WS_ADDR="/ip4/0.0.0.0/tcp/4001/ws"
+# Check if the new JSON is different from the old one before applying
+if [[ "$CURRENT_SWARM_JSON" != "$NEW_SWARM_JSON" ]]; then
+    echo "Updating Addresses.Swarm to: $NEW_SWARM_JSON"
+    ipfs config --json Addresses.Swarm "$NEW_SWARM_JSON"
+    if [ $? -ne 0 ]; then
+         echo "Error applying Swarm config!"
+         # Optionally exit or add more error handling
+    fi
+else
+    echo "Internal Addresses.Swarm already configured correctly."
+fi
 
-# # Get current swarm addresses as a JSON string
-# CURRENT_SWARM=$(ipfs config Addresses.Swarm)
-# echo "Current Swarm addresses: $CURRENT_SWARM"
-
-# # Check if the WS address is already in the array
-# if [[ "$CURRENT_SWARM" == *"$WS_ADDR"* ]]; then
-#   echo "WebSocket address already exists in swarm configuration."
-#   UPDATED_SWARM="$CURRENT_SWARM"
-# else
-#   # If the current array is empty "[]", then build a new array with WS_ADDR
-#   if [ "$CURRENT_SWARM" == "[]" ]; then
-#     UPDATED_SWARM='["'"$WS_ADDR"'"]'
-#   else
-#     # Remove the trailing ']' from CURRENT_SWARM and append the new address.
-#     UPDATED_SWARM="${CURRENT_SWARM%?},\"$WS_ADDR\"]"
-#   fi
-#   echo "Updated Swarm addresses: $UPDATED_SWARM"
-#   # Update the configuration
-#   ipfs config --json Addresses.Swarm "$UPDATED_SWARM"
-# fi
-
-
-# Build the list of announce addresses for IPFS
+# --- Configure Public WebSocket Announce Address via Proxy ---
 ANNOUNCE_ADDRS=()
 
-# Build the list of append announce addresses for IPFS (for manual port forwarding)
-APPEND_ANNOUNCE_ADDRS=()
+# Check if the proxy URL environment variable is set by Railway
+if [[ -n "$IPFS_WS_PROXY_URL" ]]; then
+    echo "Proxy URL detected: $IPFS_WS_PROXY_URL"
+    # Extract domain from the URL (handles http:// or https://)
+    PROXY_DOMAIN=$(echo "$IPFS_WS_PROXY_URL" | sed -e 's|^[^/]*//||' -e 's|/.*$||')
 
-if [[ -n "$RAILWAY_TCP_PROXY_DOMAIN" && -n "$RAILWAY_TCP_PROXY_PORT" ]]; then
-    echo "Adding TCP proxy address for IPFS (plain TCP)..."
-    # Announce for TCP connections with peer ID appended
-    TCP_ADDR="/dns4/$RAILWAY_TCP_PROXY_DOMAIN/tcp/$RAILWAY_TCP_PROXY_PORT/tls/sni/$RAILWAY_TCP_PROXY_DOMAIN/ipfs/$PEER_ID"
-    ANNOUNCE_ADDRS+=("$TCP_ADDR")
-
-    BASIC_ADDR="/dns4/$RAILWAY_TCP_PROXY_DOMAIN/tcp/$RAILWAY_TCP_PROXY_PORT"
-    APPEND_ANNOUNCE_ADDRS+=("$BASIC_ADDR")
-
-    # echo "Adding public domain address for WebSocket connections..."
-    # Announce for WebSocket connections using the same external mapping,
-    # with '/ws' appended.
-    # WS_ADDR="/dns4/$RAILWAY_TCP_PROXY_DOMAIN/tcp/$RAILWAY_TCP_PROXY_PORT/tls/sni/$RAILWAY_TCP_PROXY_DOMAIN/ws/p2p/$PEER_ID"
-    # ANNOUNCE_ADDRS+=("$WS_ADDR")
+    # Construct the public WebSocket announce address using /dns4/, /wss/ and the PeerID
+    # Railway uses port 443 for its default HTTPS URLs
+    WSS_ANNOUNCE_ADDR="/dns4/$PROXY_DOMAIN/tcp/443/wss/p2p/$PEER_ID"
+    ANNOUNCE_ADDRS+=("$WSS_ANNOUNCE_ADDR")
+    echo "Constructed Public WSS Announce Address: $WSS_ANNOUNCE_ADDR"
+else
+    echo "Warning: IPFS_WS_PROXY_URL environment variable not set. Cannot announce public WebSocket address."
 fi
 
 if [ ${#ANNOUNCE_ADDRS[@]} -gt 0 ]; then
-    # Manually build a JSON array without jq
+    # Manually build a JSON array
     JSON_ADDRS="["
     for addr in "${ANNOUNCE_ADDRS[@]}"; do
         JSON_ADDRS+="\"$addr\","
     done
     JSON_ADDRS="${JSON_ADDRS%,}"  # remove trailing comma
     JSON_ADDRS+="]"
-    
-    echo "Announcing addresses: $JSON_ADDRS"
+
+    echo "Setting Addresses.Announce: $JSON_ADDRS"
     ipfs config --json Addresses.Announce "$JSON_ADDRS"
+else
+    echo "No public addresses to announce. Clearing Addresses.Announce."
+    # Clear existing announce addresses if none are configured now
+    ipfs config --json Addresses.Announce "[]"
 fi
 
-if [ ${#APPEND_ANNOUNCE_ADDRS[@]} -gt 0 ]; then
-    # Manually build a JSON array without jq
-    JSON_ADDRS="["
-    for addr in "${APPEND_ANNOUNCE_ADDRS[@]}"; do
-        JSON_ADDRS+="\"$addr\","
-    done
-    JSON_ADDRS="${JSON_ADDRS%,}"  # remove trailing comma
-    JSON_ADDRS+="]"
+# Clear AppendAnnounce as we are explicitly setting Announce
+echo "Clearing Addresses.AppendAnnounce."
+ipfs config --json Addresses.AppendAnnounce "[]"
 
-    echo "Announcing append addresses: $JSON_ADDRS"
-    ipfs config --json Addresses.AppendAnnounce "$JSON_ADDRS"
-fi
-
-# This tells your node not to disable NAT port mapping—so if you're doing manual port forwarding, Kubo will try to use that public mapping to determine reachability.
+# This tells your node not to disable NAT port mapping. May or may not be relevant
+# behind the proxy, but keep it for now.
 ipfs config --json Swarm.DisableNatPortMap false
 
-# Enable AutoTLS settings.
-# AutoTLS.AutoWSS=true tells Kubo to add a secure WebSocket listener on the /tcp port.
-ipfs config --json AutoTLS.Enabled true
-ipfs config --json AutoTLS.AutoWSS true
-# Optionally, you can set the domain suffix if needed:
-# ipfs config --json AutoTLS.DomainSuffix "libp2p.direct"
+# Remove AutoTLS config as Nginx proxy handles TLS termination
+echo "Disabling Kubo AutoTLS as proxy handles TLS."
+ipfs config --json AutoTLS.Enabled false
+# ipfs config --json AutoTLS.AutoWSS false # This might not be needed if Enabled=false
 
-echo "Current AutoTLS configuration:"
+echo "Final IPFS configuration check:"
+echo "Addresses.Swarm:"
+ipfs config Addresses.Swarm
+echo "Addresses.Announce:"
+ipfs config Addresses.Announce
+echo "AutoTLS:"
 ipfs config AutoTLS
+echo "Addresses.API:"
+ipfs config Addresses.API
+echo "API.HTTPHeaders:" # Verify CORS settings
+ipfs config API.HTTPHeaders # Add this line to see the applied headers in logs
 
 # Start IPFS daemon in the background
+echo "Starting IPFS daemon..."
 ipfs daemon --enable-pubsub-experiment --migrate=true &
+
+# # Wait for IPFS daemon to be ready
+# echo "Waiting for IPFS daemon to start (15s)..."
+# sleep 15
+# ipfs swarm peers > /dev/null 2>&1
+# if [ $? -ne 0 ]; then
+#     echo "Warning: IPFS daemon might not be fully ready."
+# else
+#     echo "IPFS daemon seems responsive."
+# fi
 
 # Wait for IPFS to start
 sleep 5
 
+# Determine Jupyter token
+JUPYTER_TOKEN_VALUE=${JUPYTER_TOKEN:-"default_token"}
+echo "Using Jupyter token: $JUPYTER_TOKEN_VALUE"
+
 # Start Jupyter Lab
-jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.allow_origin='*'
+echo "Starting Jupyter Lab..."
+jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token="$JUPYTER_TOKEN_VALUE" --NotebookApp.allow_origin='*' 
+
+# Keep container running if Jupyter exits (optional, for debugging)
+# wait

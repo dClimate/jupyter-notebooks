@@ -1,0 +1,69 @@
+# Caddyfile.gateway
+
+# Listen on the port Railway provides for this service
+# Caddy automatically picks up the $PORT environment variable.
+http://:{$PORT} {
+    # --- Logging Configuration (kept from your example) ---
+    log {
+        output stdout
+        format json {
+            message_key     msg           # Key for the log message
+            level_key      severity       # Key for the log level
+            time_key       timestamp      # Key for the timestamp
+            name_key       logger         # Key for the logger name
+            caller_key     function       # Key for the caller information
+            stacktrace_key stack          # Key for error stacktraces
+            time_format    "2006-01-02 15:04:05 MST"  # RFC3339-like format
+            time_local                    # Use local timezone
+            duration_format "ms"          # Show durations in milliseconds
+            level_format   "upper"        # Uppercase log levels
+        }
+        format append {
+             service_role ipfs-fully-auth-proxy
+             server_env {env.jupyter-ipfs}
+             # static_field static_value # Keep if needed
+        }
+    }
+
+    # --- Define Authentication Matchers using Environment Variables ---
+    # Ensure IPFS_API_KEY, IPFS_BEARER_TOKEN, and IPFS_BASIC_AUTH_BASE64
+    # are set in the Railway environment for this service.
+    @apiKey header X-Api-Key {env.IPFS_API_KEY}
+    @bearerToken header Authorization "Bearer {env.IPFS_BEARER_TOKEN}"
+    @basicAuth header Authorization "Basic {env.IPFS_BASIC_AUTH_BASE64}"
+
+    # --- Routing Logic ---
+
+    # Route 1: Handle requests specifically for the IPFS API path
+    handle /api/v0/* {
+        # Require *at least one* of the defined authentication methods to be valid.
+        authorize {
+            @apiKey
+            @bearerToken
+            @basicAuth
+        }
+
+        # If authorization succeeded, proxy the request to the IPFS Gateway endpoint.
+        # Ensure jupyter-ipfs environment variable points to your IPFS service name in Railway.
+        reverse_proxy {env.jupyter-ipfs}:5001
+    }
+    
+    # Route 2: /webui* (Browser Authenticated Web UI Access)
+    # Requires separate Basic Auth credentials, triggers browser prompt.
+    handle /webui* {
+        # Enforce Basic Auth specifically for Web UI access.
+        # Reads WEBUI_USER and WEBUI_HASH from environment variables.
+        basicauth {
+            realm "IPFS Web UI Access"
+            {env.WEBUI_USER} {env.WEBUI_HASH}
+        }
+        # Proxy authenticated requests to IPFS API port (5001, where webui lives)
+        reverse_proxy {env.IPFS_UPSTREAM_HOST}:5001
+    }
+
+    # Route 3: Handle all other requests (e.g., /ipfs/*, /ipns/*, /)
+    # These requests will be proxied directly to the Gateway without the specific auth checks above.
+    handle {
+        reverse_proxy {env.jupyter-ipfs}:8080
+    }
+}
