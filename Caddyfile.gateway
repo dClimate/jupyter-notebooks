@@ -29,5 +29,5 @@ http://:{$PORT} {
 		reverse_proxy {env.jupyter-ipfs}:5001/webui
 	}
 
-	reverse_proxy {env.jupyter-ipfs}:8080
+	reverse_proxy {env.jupyter-ipfs}:5001/webui
 }
