@@ -24,43 +24,20 @@ http://:{$PORT} {
 		}
 	}
 
-	# Handle requests specifically for the IPFS RPC API
-	# Must come before a more general fallback
+    # Handle requests specifically for the IPFS RPC API
+    # Must come before a more general fallback
 	# handle /api/v0* {
-	#    reverse_proxy {env.jupyter-ipfs}:5001 {
-	#        # Optional but good practice: Forward original scheme
-	#        # header_upstream X-Forwarded-Proto {scheme}
-	#    }
-	#}
-	# --- API Key protected route for /api/v0/add ---
-	# Match requests missing the X-API-Key entirely
-	@missing_api_key {
-		path /api/v0/add
-		not header X-API-Key *
-	}
-	respond @missing_api_key "API Key missing" 401
-
-	# Match requests with wrong API key
-	@invalid_api_key {
-		path /api/v0/add
-		not header X-API-Key your-secret-key
-	}
-	respond @invalid_api_key "Invalid API Key" 401
-
-	handle_path /api/v0/add {
-		reverse_proxy {env.jupyter-ipfs}:5001
-	}
-
-	# Allow read-only access for 'cat' without auth
-	handle /api/v0/cat* {
-		reverse_proxy {env.jupyter-ipfs}:5001
-	}
+    #    reverse_proxy {env.jupyter-ipfs}:5001 {
+    #        # Optional but good practice: Forward original scheme
+    #        # header_upstream X-Forwarded-Proto {scheme}
+    #    }
+    #}
 
 	handle /webui* {
-		basic_auth {
-			# Username "Bob", password "hiccup"
-			Bob $2a$14$Zkx19XLiW6VYouLHR5NmfOFU0z2GTNmpkT/5qqR7hx4IjWJPDhjvG
-		}
+        basic_auth {
+            # Username "Bob", password "hiccup"
+            Bob $2a$14$Zkx19XLiW6VYouLHR5NmfOFU0z2GTNmpkT/5qqR7hx4IjWJPDhjvG
+        }
 		# Proxy authenticated requests to IPFS API port (5001, where webui lives)
 		reverse_proxy {env.jupyter-ipfs}:5001
 	}
