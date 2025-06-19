@@ -1,0 +1,56 @@
+# /etc/caddy/Caddyfile for Authenticated IPFS API Proxy
+# This version assumes all necessary environment variables are provided externally (e.g., by Railway).
+
+# Listen on the port Railway provides for this service
+# Caddy automatically picks up the $PORT environment variable.
+http://:{$PORT} {
+    # --- Logging Configuration ---
+    log {
+        output stdout
+        format json {
+            message_key     msg
+            level_key      severity
+            time_key       timestamp
+            name_key       logger
+            caller_key     function
+            stacktrace_key stack
+            time_format    "2006-01-02 15:04:05 MST"
+            time_local
+            duration_format "ms"
+            level_format   "upper"
+        }
+        format append {
+             service_role ipfs-auth-api-proxy # Identify this service
+        }
+    }
+
+    # --- Define Authentication Matchers using Environment Variables ---
+    # Caddy will read these directly from the environment provided by Railway.
+    # Ensure IPFS_API_KEY, IPFS_BEARER_TOKEN, and IPFS_BASIC_AUTH_BASE64 are set in Railway.
+    # Note: Header values containing spaces need quotes in the matcher definition.
+
+    @apiKey header X-Api-Key {env.IPFS_API_KEY}
+    @bearerToken header Authorization "Bearer {env.IPFS_BEARER_TOKEN}"
+    @basicAuth header Authorization "Basic {env.IPFS_BASIC_AUTH_BASE64}"
+
+    # --- Routing Logic ---
+
+    # Handle requests specifically for the IPFS API path
+    handle /api/v0/* {
+        # Require *at least one* of the defined authentication methods to be valid.
+        authorize {
+            @apiKey
+            @bearerToken
+            @basicAuth
+        }
+
+        # If authorization succeeded, proxy the request to the IPFS daemon API endpoint.
+        # Ensure IPFS_API_UPSTREAM is set in Railway (e.g., ipfs-daemon:5001).
+        reverse_proxy {env.IPFS_API_UPSTREAM}
+    }
+
+    # --- Default Deny for other paths ---
+    handle {
+        respond "Forbidden: Access via this endpoint requires authentication at /api/v0/" 403
+    }
+}

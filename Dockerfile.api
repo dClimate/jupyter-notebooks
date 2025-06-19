@@ -1,0 +1,7 @@
+# Dockerfile.api
+FROM caddy:2-alpine
+
+# Copy the specific Caddyfile for THIS service
+COPY Caddyfile.api /etc/caddy/Caddyfile
+
+# Base image handles running Caddy with /etc/caddy/Caddyfile on $PORT

@@ -15,6 +15,7 @@ RUN apt-get update && apt-get install -y \
     python3-venv \
     libffi-dev \
     libssl-dev \
+    jq \
     && rm -rf /var/lib/apt/lists/*
 
 ARG KUBO_VERSION=0.33.2

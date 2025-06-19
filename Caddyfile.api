@@ -1,0 +1,58 @@
+# /etc/caddy/Caddyfile for the IPFS API Authentication Gateway Service
+
+{
+    # Optional: Define env var defaults for local testing if needed
+    # env IPFS_API_KEY=test
+    # env IPFS_BEARER_TOKEN=test
+    # env IPFS_BASIC_AUTH_BASE64=dGVzdDp0ZXN0 # test:test
+    # env IPFS_API_UPSTREAM=ipfs-daemon:5001 # Example internal address for IPFS API
+}
+
+# Listen on the unique port Railway provides for THIS service
+:{$PORT} {
+    log {
+        output stdout
+        format json {
+            message_key     msg
+            level_key      severity
+            time_key       timestamp
+            name_key       logger
+            caller_key     function
+            stacktrace_key stack
+            time_format    "2006-01-02 15:04:05 MST"
+            time_local
+            duration_format "ms"
+            level_format   "upper"
+        }
+        format append {
+             # Identify logs from this specific service
+             service_role api-gateway
+             # Optionally add other static or dynamic fields
+             # server_env {env.RAILWAY_SERVICE_NAME}
+        }
+    }
+
+    # --- Define Authentication Matchers ---
+    @apiKey header X-Api-Key {env.IPFS_API_KEY}
+    @bearerToken header Authorization "Bearer {env.IPFS_BEARER_TOKEN}"
+    @basicAuth header Authorization "Basic {env.IPFS_BASIC_AUTH_BASE64}"
+
+    # --- Routing Logic for API ---
+    handle /api/v0/* {
+        # Require one of the auth methods
+        authorize {
+            @apiKey
+            @bearerToken
+            @basicAuth
+        }
+
+        # Proxy authorized requests to the IPFS daemon API
+        reverse_proxy {env.IPFS_API_UPSTREAM}
+    }
+
+    # --- Deny all other requests to this gateway ---
+    # Prevents accessing other IPFS ports/paths via this authenticated endpoint
+    handle {
+        respond "Forbidden: Access restricted to authenticated /api/v0/* requests." 403
+    }
+}
